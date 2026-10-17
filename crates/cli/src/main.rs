@@ -4,16 +4,24 @@
 //! vehicle updates per second the core achieves. Scenario and map loading arrive with
 //! the rest of Phase 1 (see docs/roadmap.md).
 
+mod generate;
+
 use citysim_core::graph::{EdgeId, EdgeKind, Graph, Signal};
 use citysim_core::idm::IdmParams;
+use citysim_core::map::load_map;
 use citysim_core::rng::Rng;
+use citysim_core::scenario::Scenario;
 use citysim_core::traffic::Traffic;
+use citysim_core::world::World;
 use citysim_core::{clock, TICK_SECONDS};
 use std::time::Instant;
 
 const HELP: &str = "citysim: headless city simulation runner
 
 USAGE
+  citysim run <city-folder> [--days D] [--seed S]   run a city (map.json + scenario.json)
+  citysim check-map <map.json>                      load and validate a map file
+  citysim generate big [--size N] [--spacing M] [--out FOLDER]   write the big example city
   citysim bench [--size N] [--hours H] [--rate R] [--seed S]
   citysim help
 
@@ -200,10 +208,161 @@ fn bench(args: &[String]) {
     }
 }
 
+fn read(path: &std::path::Path) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|e| format!("cannot read {}: {e}", path.display()))
+}
+
+fn check_map(args: &[String]) -> Result<(), String> {
+    let path = args.first().ok_or("usage: citysim check-map <map.json>")?;
+    let m = load_map(&read(std::path::Path::new(path))?)?;
+    let homes: u32 = m.buildings.iter().map(|b| b.residents).sum();
+    let jobs: u32 = m.buildings.iter().map(|b| b.jobs).sum();
+    println!(
+        "{}: OK. {} nodes, {} directed road edges, {} footpath edges{}, {} crossings ({} signalised), {} buildings (homes for {homes}, {jobs} jobs)",
+        m.name,
+        m.graph.nodes.len(),
+        m.graph.edges.len(),
+        m.foot.edges.len(),
+        if m.derived_footpaths { " (derived from roads)" } else { "" },
+        m.crossings.len(),
+        m.crossings.iter().filter(|c| c.walk.is_some()).count(),
+        m.buildings.len()
+    );
+    println!(
+        "{} traffic-light approaches",
+        m.graph.edges.iter().filter(|e| e.signal.is_some()).count()
+    );
+    for w in &m.warnings {
+        println!("warning: {w}");
+    }
+    Ok(())
+}
+
+fn run_city(args: &[String]) -> Result<(), String> {
+    let dir = std::path::PathBuf::from(args.first().ok_or("usage: citysim run <city-folder>")?);
+    let map = load_map(&read(&dir.join("map.json"))?)?;
+    let mut scenario = Scenario::from_json(&read(&dir.join("scenario.json"))?)?;
+    if args.iter().any(|a| a == "--days") {
+        scenario.days = arg(args, "--days", scenario.days);
+    }
+    if args.iter().any(|a| a == "--seed") {
+        scenario.seed = arg(args, "--seed", scenario.seed);
+    }
+    let days = scenario.days;
+    let t0 = Instant::now();
+    let mut world = World::new(map, scenario)?;
+    println!(
+        "{}: {} residents, {} car owners, {} signalised crossings; set-up {:.2} s",
+        world.map.name,
+        world.resident_count(),
+        world.car_owner_count(),
+        world
+            .map
+            .crossings
+            .iter()
+            .filter(|c| c.walk.is_some())
+            .count(),
+        t0.elapsed().as_secs_f64()
+    );
+    for w in &world.warnings {
+        println!("warning: {w}");
+    }
+    println!("time   walking  cars  trips done  late");
+    let started = Instant::now();
+    let total = days as u64 * clock::TICKS_PER_DAY;
+    for tick in 0..total {
+        world.step();
+        if (tick + 1) % (clock::TICKS_PER_DAY / 24) == 0 {
+            println!(
+                "{:>3}h {:>8} {:>5} {:>11} {:>5}",
+                (tick + 1) / (clock::TICKS_PER_DAY / 24),
+                world.walker_count(),
+                world.traffic.vehicle_count(),
+                world.stats.trips_done,
+                world.stats.late_arrivals
+            );
+        }
+    }
+    let wall = started.elapsed().as_secs_f64();
+    let s = &world.stats;
+    println!(
+        "\n{days} day(s) simulated in {wall:.2} s ({:.1}x real time)",
+        days as f64 * 86_400.0 / wall
+    );
+    println!(
+        "trips: {} started, {} done ({} by car); late arrivals {}",
+        s.trips_started, s.trips_done, s.car_trips, s.late_arrivals
+    );
+    if s.commutes_car > 0 {
+        println!(
+            "average car commute {:.1} min",
+            s.commute_seconds_car / s.commutes_car as f64 / 60.0
+        );
+    }
+    if s.commutes_foot > 0 {
+        println!(
+            "average walking/cycling commute {:.1} min",
+            s.commute_seconds_foot / s.commutes_foot as f64 / 60.0
+        );
+    }
+    println!(
+        "crossings used {}, pedestrians waited {:.0} s in total, vehicle-over-crossing violations {} (must be 0), safety clamps {} (must be 0)",
+        s.crossings_made, s.crossing_wait_seconds, s.crossing_violations, world.traffic.stats.clamps
+    );
+    println!("state hash {:016x}", world.state_hash());
+    let mut worst: Vec<(usize, f64)> = world
+        .traffic
+        .stats
+        .slow_seconds
+        .iter()
+        .copied()
+        .enumerate()
+        .collect();
+    worst.sort_by(|a, b| b.1.total_cmp(&a.1).then(a.0.cmp(&b.0)));
+    println!("slowest road segments (vehicle-seconds below 20 % of the limit):");
+    for (e, secs) in worst.iter().take(5) {
+        let edge = &world.traffic.graph.edges[*e];
+        let n = &world.traffic.graph.nodes[edge.to as usize];
+        println!("  towards ({:.0}, {:.0}): {secs:.0} s", n.x, n.y);
+    }
+    Ok(())
+}
+
+fn generate(args: &[String]) -> Result<(), String> {
+    if args.first().map(String::as_str) != Some("big") {
+        return Err("usage: citysim generate big [--size N] [--spacing M] [--out FOLDER]".into());
+    }
+    let size: usize = arg(args, "--size", 40).clamp(6, 200);
+    let spacing: f64 = arg(args, "--spacing", 120.0);
+    let out: String = arg(args, "--out", "cities/big-city".to_string());
+    let c = generate::big_city(size, spacing);
+    std::fs::create_dir_all(&out).map_err(|e| format!("cannot create {out}: {e}"))?;
+    std::fs::write(format!("{out}/map.json"), &c.map_json).map_err(|e| e.to_string())?;
+    std::fs::write(format!("{out}/scenario.json"), &c.scenario_json).map_err(|e| e.to_string())?;
+    println!(
+        "wrote {out}: {} intersections, {} street segments, {} buildings; homes for {}, {} jobs; scenario with {} residents",
+        c.nodes, c.edges, c.buildings, c.home_capacity, c.jobs, c.residents
+    );
+    Ok(())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    match args.first().map(String::as_str) {
-        Some("bench") => bench(&args[1..]),
-        _ => print!("{HELP}"),
+    let result = match args.first().map(String::as_str) {
+        Some("bench") => {
+            bench(&args[1..]);
+            Ok(())
+        }
+        Some("run") => run_city(&args[1..]),
+        Some("check-map") => check_map(&args[1..]),
+        Some("generate") => generate(&args[1..]),
+        _ => {
+            print!("{HELP}");
+            Ok(())
+        }
+    };
+    if let Err(e) = result {
+        eprintln!("error: {e}");
+        std::process::exit(1);
     }
 }

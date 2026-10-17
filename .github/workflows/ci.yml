@@ -19,6 +19,11 @@ jobs:
         run: cargo clippy --workspace --all-targets -- -D warnings
       - name: Tests (workspace)
         run: cargo test --workspace --release
+      - name: Example cities load and the tiny town runs
+        run: |
+          cargo run --release -p citysim-cli -- check-map cities/tiny-town/map.json
+          cargo run --release -p citysim-cli -- check-map cities/big-city/map.json
+          cargo run --release -p citysim-cli -- run cities/tiny-town --days 1
       - name: Proof of concept builds and passes its tests
         working-directory: poc
         run: |

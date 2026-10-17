@@ -1,0 +1,119 @@
+{
+  "name": "tiny_town",
+  "defaults": {"laneWidthM": 3.5, "footpathWidthM": 2.0},
+  "nodes": [
+    {"id": 1, "pos": {"x": 0, "y": 0}, "level": 0},
+    {"id": 2, "pos": {"x": 60, "y": 0}, "level": 0},
+    {"id": 3, "pos": {"x": 150, "y": 0}, "level": 0},
+    {"id": 4, "pos": {"x": 215, "y": 0}, "level": 0},
+    {"id": 5, "pos": {"x": 300, "y": 0}, "level": 0, "trafficLightId": 1},
+    {"id": 6, "pos": {"x": 375, "y": 0}, "level": 0},
+    {"id": 7, "pos": {"x": 450, "y": 0}, "level": 0},
+    {"id": 8, "pos": {"x": 525, "y": 0}, "level": 0},
+    {"id": 9, "pos": {"x": 600, "y": 0}, "level": 0},
+    {"id": 11, "pos": {"x": 150, "y": 120}, "level": 0},
+    {"id": 12, "pos": {"x": 300, "y": -120}, "level": 0},
+    {"id": 13, "pos": {"x": 300, "y": 120}, "level": 0},
+    {"id": 14, "pos": {"x": 450, "y": -120}, "level": 0},
+    {"id": 100, "pos": {"x": 60, "y": -6}, "level": 0},
+    {"id": 101, "pos": {"x": 114, "y": -6}, "level": 0},
+    {"id": 102, "pos": {"x": 215, "y": -6}, "level": 0},
+    {"id": 103, "pos": {"x": 270, "y": -6}, "level": 0},
+    {"id": 104, "pos": {"x": 294, "y": -6}, "level": 0},
+    {"id": 105, "pos": {"x": 306, "y": -6}, "level": 0},
+    {"id": 106, "pos": {"x": 330, "y": -6}, "level": 0},
+    {"id": 107, "pos": {"x": 375, "y": -6}, "level": 0},
+    {"id": 108, "pos": {"x": 444, "y": -6}, "level": 0},
+    {"id": 109, "pos": {"x": 456, "y": -6}, "level": 0},
+    {"id": 110, "pos": {"x": 487, "y": -6}, "level": 0},
+    {"id": 111, "pos": {"x": 60, "y": 6}, "level": 0},
+    {"id": 112, "pos": {"x": 114, "y": 6}, "level": 0},
+    {"id": 113, "pos": {"x": 144, "y": 6}, "level": 0},
+    {"id": 114, "pos": {"x": 156, "y": 6}, "level": 0},
+    {"id": 115, "pos": {"x": 215, "y": 6}, "level": 0},
+    {"id": 116, "pos": {"x": 270, "y": 6}, "level": 0},
+    {"id": 117, "pos": {"x": 294, "y": 6}, "level": 0},
+    {"id": 118, "pos": {"x": 306, "y": 6}, "level": 0},
+    {"id": 119, "pos": {"x": 330, "y": 6}, "level": 0},
+    {"id": 120, "pos": {"x": 375, "y": 6}, "level": 0},
+    {"id": 121, "pos": {"x": 487, "y": 6}, "level": 0},
+    {"id": 122, "pos": {"x": 525, "y": 6}, "level": 0}
+  ],
+  "edges": [
+    {"id": 1, "from": 1, "to": 2, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 2, "from": 2, "to": 3, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 3, "from": 3, "to": 4, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 4, "from": 4, "to": 5, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 5, "from": 5, "to": 6, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 6, "from": 6, "to": 7, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 7, "from": 7, "to": 8, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 8, "from": 8, "to": 9, "kind": "road", "lanes": 1, "speedLimit": 13.9, "oneWay": false},
+    {"id": 21, "from": 3, "to": 11, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false},
+    {"id": 22, "from": 12, "to": 5, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false},
+    {"id": 23, "from": 5, "to": 13, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false},
+    {"id": 24, "from": 14, "to": 7, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false},
+    {"id": 300, "from": 100, "to": 101, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 301, "from": 101, "to": 102, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 302, "from": 102, "to": 103, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 303, "from": 103, "to": 104, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 304, "from": 105, "to": 106, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 305, "from": 106, "to": 107, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 306, "from": 107, "to": 108, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 307, "from": 109, "to": 110, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 308, "from": 111, "to": 112, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 309, "from": 112, "to": 113, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 310, "from": 114, "to": 115, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 311, "from": 115, "to": 116, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 312, "from": 116, "to": 117, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 313, "from": 118, "to": 119, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 314, "from": 119, "to": 120, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 315, "from": 120, "to": 121, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 316, "from": 121, "to": 122, "kind": "footpath", "lanes": 1, "oneWay": false},
+    {"id": 400, "from": 101, "to": 112, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 2, "t": 0.6}},
+    {"id": 401, "from": 103, "to": 116, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 4, "t": 0.6471}},
+    {"id": 402, "from": 106, "to": 119, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 5, "t": 0.4}},
+    {"id": 403, "from": 110, "to": 121, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 7, "t": 0.4933}},
+    {"id": 404, "from": 104, "to": 105, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 22, "t": 0.95}},
+    {"id": 405, "from": 117, "to": 118, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 23, "t": 0.05}},
+    {"id": 406, "from": 113, "to": 114, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 21, "t": 0.05}},
+    {"id": 407, "from": 108, "to": 109, "kind": "crossing", "lanes": 1, "oneWay": false, "widthM": 3, "crossing": {"edgeId": 24, "t": 0.95}}
+  ],
+  "trafficLights": [
+    {
+      "id": 1,
+      "nodeId": 5,
+      "cycleSeconds": 60,
+      "phases": [
+        {
+          "edgeIds": [
+            4,
+            5,
+            404,
+            405
+          ],
+          "startSecond": 0,
+          "greenSeconds": 26
+        },
+        {
+          "edgeIds": [
+            22,
+            23,
+            401,
+            402
+          ],
+          "startSecond": 30,
+          "greenSeconds": 26
+        }
+      ]
+    }
+  ],
+  "buildings": [
+    {"id": 1, "kind": "home", "footprint": [{"x": 20, "y": -40}, {"x": 100, "y": -40}, {"x": 100, "y": -12}, {"x": 20, "y": -12}], "entranceNodeId": 2, "doorNodeId": 100, "capacity": {"residents": 13}, "open": [{"from": 0, "to": 1440}], "flammability": 0.5},
+    {"id": 2, "kind": "home", "footprint": [{"x": 170, "y": -40}, {"x": 260, "y": -40}, {"x": 260, "y": -12}, {"x": 170, "y": -12}], "entranceNodeId": 4, "doorNodeId": 102, "capacity": {"residents": 13}, "open": [{"from": 0, "to": 1440}], "flammability": 0.5},
+    {"id": 3, "kind": "home", "footprint": [{"x": 330, "y": -40}, {"x": 420, "y": -40}, {"x": 420, "y": -12}, {"x": 330, "y": -12}], "entranceNodeId": 6, "doorNodeId": 107, "capacity": {"residents": 12}, "open": [{"from": 0, "to": 1440}], "flammability": 0.5},
+    {"id": 4, "kind": "home", "footprint": [{"x": 20, "y": 12}, {"x": 100, "y": 12}, {"x": 100, "y": 40}, {"x": 20, "y": 40}], "entranceNodeId": 2, "doorNodeId": 111, "capacity": {"residents": 12}, "open": [{"from": 0, "to": 1440}], "flammability": 0.5},
+    {"id": 5, "kind": "office", "footprint": [{"x": 500, "y": 12}, {"x": 590, "y": 12}, {"x": 590, "y": 44}, {"x": 500, "y": 44}], "entranceNodeId": 8, "doorNodeId": 122, "capacity": {"jobs": 30, "visitors": 10}, "open": [{"from": 360, "to": 1200}], "flammability": 0.3},
+    {"id": 6, "kind": "shop", "footprint": [{"x": 330, "y": 12}, {"x": 420, "y": 12}, {"x": 420, "y": 40}, {"x": 330, "y": 40}], "entranceNodeId": 6, "doorNodeId": 120, "capacity": {"jobs": 8, "visitors": 40}, "open": [{"from": 360, "to": 1200}], "flammability": 0.4}
+  ],
+  "mobileWorkplaces": []
+}

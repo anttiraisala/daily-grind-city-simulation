@@ -9,7 +9,15 @@ export interface Vec2 { x: number; y: number }
 
 // ---------------------------------------------------------------- MAP
 
-export type EdgeKind = "road" | "footpath" | "bikelane" | "ramp";
+// road: carries vehicles (lanes per direction). footpath: carries pedestrians.
+// crossing: a footpath edge that crosses a road edge (see RoadEdge.crossing).
+// ramp: a road edge that connects two levels. bikelane: reserved for later.
+export type EdgeKind = "road" | "footpath" | "crossing" | "bikelane" | "ramp";
+
+export interface MapDefaults {
+  laneWidthM: number;        // road width = lanes * laneWidthM (per direction, drawn both ways)
+  footpathWidthM: number;
+}
 
 export interface RoadNode {
   id: Id;
@@ -27,6 +35,12 @@ export interface RoadEdge {
   speedLimit: number;          // m/s
   oneWay: boolean;
   laneWidthM?: number;         // overrides the map default; road width = lanes * laneWidthM
+  // Only for kind "crossing": which road edge it crosses and where (t = 0..1 along that
+  // edge, from its "from" node). Pedestrians cross on foot; vehicles on that road edge
+  // (both directions if two-way) must stop while the crossing is occupied or its walk
+  // signal is active. A crossing that appears in no traffic-light phase is a zebra crossing.
+  crossing?: { edgeId: Id; t: number };
+  widthM?: number;             // crossing width along the road, default 3 m
   // A ramp connects levels: the level values of its end nodes tell from where to where.
 }
 
@@ -34,6 +48,8 @@ export interface TrafficLight {
   id: Id;
   nodeId: Id;
   cycleSeconds: number;
+  // edgeIds may name road edges (vehicles of that approach get green) and crossing edges
+  // (pedestrians may walk). An edge may appear in at most one phase for now.
   phases: { edgeIds: Id[]; startSecond: number; greenSeconds: number }[];
 }
 
@@ -47,7 +63,8 @@ export interface Building {
   id: Id;
   kind: BuildingKind;
   footprint: Vec2[];           // polygon
-  entranceNodeId: Id;
+  entranceNodeId: Id;          // road node where vehicles start and end trips here
+  doorNodeId?: Id;             // footpath node where pedestrians enter and leave (default: entranceNodeId)
   capacity: { residents?: number; jobs?: number; visitors?: number };
   open: OpeningWindow[];       // opening hours of a workplace or shop
   flammability: number;        // 0..1

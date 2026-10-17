@@ -6,7 +6,12 @@
 pub mod clock;
 pub mod graph;
 pub mod idm;
+pub mod json;
+pub mod map;
+pub mod path;
 pub mod rng;
+pub mod scenario;
 pub mod traffic;
+pub mod world;
 
 pub use clock::{TICKS_PER_DAY, TICK_SECONDS};

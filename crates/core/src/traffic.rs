@@ -10,7 +10,7 @@
 //!   distance can let a vehicle brake late for a red light further on.
 
 use crate::clock::{seconds, TICK_SECONDS};
-use crate::graph::{EdgeId, Graph};
+use crate::graph::{EdgeId, Graph, Signal};
 use crate::idm::{accel, IdmParams};
 use std::collections::VecDeque;
 
@@ -27,6 +27,18 @@ pub struct Vehicle {
     /// Position of the front bumper along the segment, m.
     pub pos: f64,
     pub speed: f64,
+}
+
+/// A pedestrian crossing over one or more directed road edges (both directions of a
+/// two-way road). Vehicles stop before it while pedestrians are on it or while its walk
+/// signal is on. Pedestrians decide when to step onto it (see `world`).
+#[derive(Clone, Debug)]
+pub struct Crossing {
+    /// Directed road edges it crosses, with the position along each, m.
+    pub road: Vec<(EdgeId, f64)>,
+    pub width: f64,
+    /// Walk signal; `None` for a zebra crossing.
+    pub walk: Option<Signal>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -50,6 +62,11 @@ pub struct Traffic {
     pub tick: u64,
     next_id: u32,
     pub stats: Stats,
+    crossings: Vec<Crossing>,
+    occupied: Vec<u32>,
+    /// Per segment: (position, crossing index), sorted by position.
+    crossings_on: Vec<Vec<(f64, usize)>>,
+    finished_ids: Vec<u32>,
 }
 
 impl Traffic {
@@ -67,11 +84,112 @@ impl Traffic {
                 slow_seconds: vec![0.0; n],
                 ..Stats::default()
             },
+            crossings: Vec::new(),
+            occupied: Vec::new(),
+            crossings_on: vec![Vec::new(); n],
+            finished_ids: Vec::new(),
         })
+    }
+
+    pub fn set_crossings(&mut self, crossings: Vec<Crossing>) {
+        self.crossings_on = vec![Vec::new(); self.lanes.len()];
+        for (i, c) in crossings.iter().enumerate() {
+            for &(e, pos) in &c.road {
+                self.crossings_on[e as usize].push((pos, i));
+            }
+        }
+        for list in &mut self.crossings_on {
+            list.sort_by(|a, b| a.0.total_cmp(&b.0).then(a.1.cmp(&b.1)));
+        }
+        self.occupied = vec![0; crossings.len()];
+        self.crossings = crossings;
+    }
+
+    pub fn crossing(&self, i: usize) -> &Crossing {
+        &self.crossings[i]
+    }
+
+    /// Number of pedestrians currently on each crossing; set by the world every tick.
+    pub fn set_occupied(&mut self, counts: &[u32]) {
+        self.occupied.copy_from_slice(counts);
+    }
+
+    /// True if pedestrians may currently walk on the crossing according to its signal.
+    pub fn walk_allowed(&self, i: usize) -> Option<bool> {
+        self.crossings[i]
+            .walk
+            .map(|s| s.is_green(seconds(self.tick)))
+    }
+
+    /// Seconds until the walk signal turns off (0 if it is off or the crossing is a zebra).
+    pub fn walk_remaining(&self, i: usize) -> f64 {
+        match self.crossings[i].walk {
+            Some(s) if s.is_green(seconds(self.tick)) => {
+                s.green_s - (seconds(self.tick) - s.offset_s).rem_euclid(s.cycle_s)
+            }
+            _ => 0.0,
+        }
+    }
+
+    fn crossing_active(&self, i: usize) -> bool {
+        self.occupied[i] > 0 || self.walk_allowed(i) == Some(true)
+    }
+
+    /// True if a vehicle is on or about to enter the crossing and cannot stop in time.
+    pub fn crossing_danger(&self, i: usize) -> bool {
+        let c = &self.crossings[i];
+        for &(e, pos) in &c.road {
+            let stop = pos - c.width / 2.0 - 1.0;
+            let clear = pos + c.width / 2.0 + self.idm.length;
+            for v in &self.lanes[e as usize] {
+                if v.pos > clear {
+                    continue;
+                }
+                if v.pos > stop + 0.5 {
+                    return true; // already past the stop line
+                }
+                if v.speed > 1.0 && stop - v.pos < 6.0 + 2.5 * v.speed {
+                    return true; // moving and too close to stop comfortably
+                }
+            }
+        }
+        false
+    }
+
+    /// Number of occupied crossings that have a vehicle driving over them. Must stay 0.
+    pub fn crossing_violations(&self) -> u32 {
+        let mut n = 0;
+        for (i, c) in self.crossings.iter().enumerate() {
+            if self.occupied[i] == 0 {
+                continue;
+            }
+            let hit = c.road.iter().any(|&(e, pos)| {
+                self.lanes[e as usize].iter().any(|v| {
+                    v.pos > pos - c.width / 2.0 && v.pos - self.idm.length < pos + c.width / 2.0
+                })
+            });
+            if hit {
+                n += 1;
+            }
+        }
+        n
+    }
+
+    /// Ids of vehicles that reached the end of their route since the last call.
+    pub fn take_finished(&mut self) -> Vec<u32> {
+        std::mem::take(&mut self.finished_ids)
     }
 
     pub fn vehicles_on(&self, edge: EdgeId) -> impl Iterator<Item = &Vehicle> {
         self.lanes[edge as usize].iter()
+    }
+
+    /// All vehicles with the segment they are on.
+    pub fn all_vehicles(&self) -> impl Iterator<Item = (EdgeId, &Vehicle)> {
+        self.lanes
+            .iter()
+            .enumerate()
+            .flat_map(|(e, l)| l.iter().map(move |v| (e as EdgeId, v)))
     }
 
     pub fn vehicle_count(&self) -> usize {
@@ -146,6 +264,13 @@ impl Traffic {
                         consider(edge.length - v.pos, v.speed);
                     }
                 }
+                for &(pos, ci) in &self.crossings_on[e] {
+                    let stop = pos - self.crossings[ci].width / 2.0 - 1.0;
+                    if v.pos <= stop + 0.5 && self.crossing_active(ci) {
+                        consider(stop - v.pos, v.speed);
+                        break;
+                    }
+                }
                 row.push(accel(&self.idm, v.speed, edge.speed_limit, ahead));
             }
             acc.push(row);
@@ -184,7 +309,9 @@ impl Traffic {
                 continue;
             }
             if front.leg + 1 >= front.route.len() {
-                self.lanes[e].pop_front();
+                if let Some(v) = self.lanes[e].pop_front() {
+                    self.finished_ids.push(v.id);
+                }
                 self.stats.finished += 1;
                 continue;
             }

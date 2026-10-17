@@ -1,0 +1,35 @@
+{
+  "seed": 1,
+  "time": { "tickSeconds": 0.1, "startTime": "00:00", "daysToRun": 1 },
+  "population": { "residents": 71079 },
+  "occupations": [
+    {
+      "kind": "office", "share": 0.38, "remoteShare": 0.15,
+      "start": [
+        { "time": "08:00", "sdMinutes": 30, "weight": 0.5 },
+        { "time": "07:00", "sdMinutes": 20, "weight": 0.2 },
+        { "time": "10:00", "sdMinutes": 30, "weight": 0.3 }
+      ],
+      "durationHours": { "mean": 8, "sd": 0.7 }
+    },
+    {
+      "kind": "parttime", "share": 0.10, "remoteShare": 0.10,
+      "start": [{ "time": "09:00", "sdMinutes": 90, "weight": 1 }],
+      "durationHours": { "mean": 5, "sd": 1 }
+    },
+    { "kind": "shift", "share": 0.12, "shifts": ["06:00-14:00", "14:00-22:00", "22:00-06:00"] },
+    {
+      "kind": "student", "share": 0.12,
+      "start": [{ "time": "08:30", "sdMinutes": 15, "weight": 1 }],
+      "durationHours": { "mean": 6, "sd": 1 }
+    },
+    { "kind": "retired", "share": 0.14 },
+    { "kind": "unemployed", "share": 0.14 }
+  ],
+  "commuteEstimate": { "initialFactor": 1.2, "learningRate": 0.3, "bufferMinutes": { "mean": 5, "sd": 3 } },
+  "transport": {
+    "ownership": { "car": 0.55, "bike": 0.35 },
+    "forceCarCount": null,
+    "vehicleSizes": { "car": { "lengthM": 4.5, "widthM": 1.8 } }
+  }
+}
