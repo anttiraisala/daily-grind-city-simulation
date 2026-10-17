@@ -236,6 +236,23 @@ It prints vehicles spawned and finished, safety clamps (must be 0), speed, a sta
 git pull
 ```
 
+**5h. Run an example city (headless):**
+
+```sh
+cargo run --release -p citysim-cli -- check-map cities/tiny-town/map.json
+cargo run --release -p citysim-cli -- run cities/tiny-town --days 2
+```
+
+`tiny-town` has one main road, a few side streets, 6 buildings, 50 residents and 10 cars; it runs in a fraction of a second and prints an hourly table, trip counts, safety violations (must be 0) and a state hash. `cities/big-city` has 71,000 residents and takes minutes per simulated day. See `cities/README.md`.
+
+**5i. Open the city editor:**
+
+```sh
+python3 -m http.server 8000
+```
+
+Then open <http://localhost:8000/editor/index.html> in a browser, choose "Load example…" or draw roads, footpaths, crossings, lights and buildings, press "Save JSON" and check the file with `citysim check-map`. Stop the server with Ctrl+C. Details in `docs/city-editor.md`.
+
 ### 6. Troubleshooting
 
 | Symptom | Cause and fix |
@@ -270,7 +287,9 @@ More about the demo, its API and its limits: [`poc/README.md`](poc/README.md). T
 | `schema/scenario.example.json` | Example scenario: population, traits, schedules, events |
 | `schema/map.example.json` | Example map: roads, traffic lights, buildings |
 | `schema/viewer.example.json` | Example viewer settings: default and allowed visual styles, scale behavior |
-| `crates/` | Rust workspace for the real simulation: `core` (headless), `cli` (runner), `server` (viewer link); skeleton only |
+| `cities/` | Example cities (`tiny-town`, `big-city`): `map.json` + `scenario.json` |
+| `editor/` | Browser city editor (single file) and its headless test |
+| `crates/` | Rust workspace for the real simulation: `core` (headless), `cli` (runner), `server` (viewer link, skeleton only) |
 | `poc/` | Proof of concept: native Rust simulation, browser viewer, phone over the local network |
 | `LICENSE` | MIT license |
 

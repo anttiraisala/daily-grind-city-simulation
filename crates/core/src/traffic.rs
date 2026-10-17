@@ -46,6 +46,8 @@ pub struct Stats {
     pub spawned: u64,
     pub spawn_blocked: u64,
     pub finished: u64,
+    /// Vehicles removed from a gridlock after waiting on green with no room ahead (a subset of `finished`).
+    pub teleported: u64,
     /// Times the safety clamp had to stop an overlap. Should stay 0.
     pub clamps: u64,
     /// Per segment: vehicle-seconds spent.
@@ -67,6 +69,10 @@ pub struct Traffic {
     /// Per segment: (position, crossing index), sorted by position.
     crossings_on: Vec<Vec<(f64, usize)>>,
     finished_ids: Vec<u32>,
+    /// Ticks the front vehicle of each segment has waited on green with no room ahead.
+    blocked_ticks: Vec<u32>,
+    /// Gridlock breaker: a vehicle blocked this long is removed and counted as arrived.
+    pub teleport_after_ticks: u32,
 }
 
 impl Traffic {
@@ -88,6 +94,8 @@ impl Traffic {
             occupied: Vec::new(),
             crossings_on: vec![Vec::new(); n],
             finished_ids: Vec::new(),
+            blocked_ticks: vec![0; n],
+            teleport_after_ticks: 1200,
         })
     }
 
@@ -326,9 +334,25 @@ impl Traffic {
                 v.leg += 1;
                 v.pos = new_pos;
                 self.lanes[ne].push_back(v);
-            } else if let Some(f) = self.lanes[e].front_mut() {
-                f.pos = length;
-                f.speed = 0.0;
+                self.blocked_ticks[e] = 0;
+            } else {
+                if green_now[e] {
+                    self.blocked_ticks[e] += 1;
+                }
+                if self.teleport_after_ticks > 0
+                    && self.blocked_ticks[e] >= self.teleport_after_ticks
+                {
+                    // Gridlock breaker (as in SUMO): remove the vehicle and count the trip as done.
+                    if let Some(v) = self.lanes[e].pop_front() {
+                        self.finished_ids.push(v.id);
+                    }
+                    self.stats.finished += 1;
+                    self.stats.teleported += 1;
+                    self.blocked_ticks[e] = 0;
+                } else if let Some(f) = self.lanes[e].front_mut() {
+                    f.pos = length;
+                    f.speed = 0.0;
+                }
             }
         }
 

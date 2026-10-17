@@ -76,7 +76,7 @@ These are not optional extras. Each one affects the core model or the schema.
 
 **G2. Intersections.** Most crashes and most congestion happen at intersections, and the plan has no intersection model yet. Needed: conflict zones where movements cross, right-of-way rules (traffic lights, yield signs, and the right-hand priority rule at uncontrolled intersections, as in Finland), turning movements, and left turns across oncoming traffic.
 
-**G3. Pedestrian crossings.** Accidents between pedestrians and vehicles happen where footpaths cross roads. Needed: crossing edges with or without signals, conflict points against road edges on the same level, and jaywalking as a trait.
+**G3. Pedestrian crossings.** **Status: first slice done (map format v0.2 `crossing` edges, walk signals, vehicle stop lines; zero violations on the tiny town); jaywalking and cross-edge lookahead open.** Accidents between pedestrians and vehicles happen where footpaths cross roads. Needed: crossing edges with or without signals, conflict points against road edges on the same level, and jaywalking as a trait.
 
 **G4. Lane changes.** IDM models a single lane. Multi-lane roads need a lane-change model such as MOBIL.
 
@@ -215,6 +215,7 @@ The best value for the effort:
 1. **Phase 1 gaps: G2, G3 and G6 only.** Intersections, pedestrian crossings and initial state/burn-in come first, because the first research question is where congestion forms. G1 (driver error model), G5 (parking) and G7 (calendar) move out of Phase 1; G1 goes with incidents (Phase 4), G5 and G7 are scheduled before the first year-long run. G4 and G8 stay later. Consequences to accept: until G5 exists, cars still vanish at their destination and parking search cannot cause congestion; until G7 exists, every simulated day is a weekday, so a year-long run is only meaningful after G7.
 2. **Population: constant** over a run. Demographics (G8, I-07) come later.
 3. **Long runs: sequential weeks.** Learned commute estimates carry over, so parallel weeks are not valid. Parallel runs are for different seeds or scenarios from a shared burn-in snapshot (G6), not for different weeks of one run.
+4. **Example cities and editor (2026-10-18).** Two shipped cities (`cities/tiny-town`, `cities/big-city`) and a single-file browser editor (`docs/city-editor.md`). Map format v0.2 adds `crossing` edges (`crossing: {edgeId, t}`, `widthM`) and `doorNodeId`. The core parses JSON with its own small parser because crates.io is unreachable in the build sandbox; switch to serde if the schemas outgrow it.
 
 ## 7. Open questions
 

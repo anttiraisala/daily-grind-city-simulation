@@ -309,6 +309,11 @@ fn run_city(args: &[String]) -> Result<(), String> {
         "crossings used {}, pedestrians waited {:.0} s in total, vehicle-over-crossing violations {} (must be 0), safety clamps {} (must be 0)",
         s.crossings_made, s.crossing_wait_seconds, s.crossing_violations, world.traffic.stats.clamps
     );
+    println!(
+        "gridlock teleports (vehicles removed after {} s blocked on green): {}",
+        world.traffic.teleport_after_ticks as f64 * 0.1,
+        world.traffic.stats.teleported
+    );
     println!("state hash {:016x}", world.state_hash());
     let mut worst: Vec<(usize, f64)> = world
         .traffic

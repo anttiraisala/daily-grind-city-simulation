@@ -27,21 +27,21 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 - [x] Project skeleton: Rust workspace (`crates/core`, `crates/cli`, `crates/server`), tests, CI (GitHub Actions: fmt, clippy, tests, PoC check, JSON validity)
 - [x] Seeded RNG with one stream per agent (`crates/core/src/rng.rs`)
 - [x] Fixed-step simulation loop and 24-hour clock (0.1 s ticks, `clock.rs`, `traffic.rs`)
-- [ ] Config loading and validation (scenario + map)
-- [~] Road graph, z-levels, ramps (`graph.rs`: nodes with levels, ramp edges, signals; JSON import and level-aware interaction still open)
+- [x] Config loading and validation (scenario + map): dependency-free JSON parser in `json.rs`, loaders in `map.rs` and `scenario.rs`, `citysim check-map`
+- [~] Road graph, z-levels, ramps (`graph.rs`: nodes with levels, ramp edges, signals; JSON import done; level-aware interaction still open)
 - [ ] Spatial hash keyed by (cell, level)
 - [ ] Agents: traits, needs, mood, commitments, goals
 - [ ] Schedule generation from the scenario distributions (start times, shifts, lunch, remote work)
 - [ ] Event-driven decisions; needs updated once per simulated minute
-- [ ] Pathfinding and learned commute estimates
+- [x] Pathfinding and learned commute estimates (`path.rs`, route trees per destination, `world.rs`)
 - [x] Lane-following vehicles: IDM car-following on finite segments with queue spillback (G10), one lane per segment
 - [~] Intersections (G2): fixed-time signals and entry-if-room hand-over done; conflict zones, right of way, turning movements open
-- [ ] Pedestrian movement with social force; pedestrian crossings (G3)
+- [~] Pedestrian movement with social force; pedestrian crossings (G3): walking on a footpath graph, crossings with walk signals and vehicle stop lines done (tiny town: 0 violations); social force (avoiding other pedestrians) open
 - [ ] Initial state and burn-in snapshot (G6)
 - [ ] Command log (needs, goals, road edits, pause)
 - [ ] Event log and periodic snapshots
 - [ ] Accumulation layers: dwell time, speed, slow time per cell per hour
-- [~] Headless CLI runner (I-71): `citysim bench` on a synthetic grid; scenario and map loading open
+- [x] Headless CLI runner (I-71): `citysim run <city>`, `check-map`, `generate big`, `bench`
 - [~] Determinism test: state-hash test for traffic exists; event log open
 
 **Exit criteria:** a 200-agent district runs a simulated week headlessly, the determinism test passes, and the congestion heatmap shows a visible morning and evening peak.
@@ -73,7 +73,10 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 
 ## Phase 3: Map editor and OSM import
 
-- [ ] Draw roads, footpaths, ramps; place buildings and traffic lights
+- [x] Example cities: `cities/tiny-town` (50 residents, 10 cars) and `cities/big-city` (71k residents, generated)
+- [ ] Big city: no gridlock in a one-day run (see progress log 2026-10-18)
+
+- [~] Draw roads, footpaths, crossings; place buildings and traffic lights: first browser editor in `editor/` (`docs/city-editor.md`); ramps, curves and scenario editing open
 - [ ] Live road edits as commands, with network epochs
 - [ ] OpenStreetMap import with manual edits stored as a diff
 - [ ] Chunked storage for large maps

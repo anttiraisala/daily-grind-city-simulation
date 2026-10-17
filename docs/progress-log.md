@@ -2,6 +2,25 @@
 
 Dated, newest first. One entry per working session or milestone: what was done, what was decided, what is next.
 
+## 2026-10-18
+
+**Done**
+- Core can now load a real city: dependency-free JSON parser, map format v0.2 (two-way roads, footpaths, pedestrian crossings with walk signals, building door nodes), scenario loader, pathfinding, `World` runner with commuters, learned commute estimates, cars via the road graph and walkers/cyclists on the footpath graph.
+- CLI: `citysim run <city>`, `check-map`, `generate big`.
+- Example cities: `cities/tiny-town` (one main road, side streets, 6 buildings, 50 residents, 10 cars, 8 crossings, one light) and `cities/big-city` (generated, 71k residents).
+- Browser city editor (`editor/index.html`, `docs/city-editor.md`) with a headless Playwright test; exported maps pass `citysim check-map`.
+- Pedestrian crossing safety test on the tiny town: no violations, no clamped steps, deterministic.
+
+**Decided**
+- The core keeps its own JSON parser for now (crates.io is unreachable in the sandbox); switch to serde if the schemas outgrow it.
+- Editor edits the map only; scenario editing stays manual until the settings panel.
+
+**Found**
+- Big city, one day: 300 s wall time (287x real time), many cars still on the road in the evening (see roadmap item "no gridlock"). The junction model only checks "room and green", so cyclic spillback can lock a grid; this is a G2 problem, not a tuning one.
+
+**Next**
+- Fix big-city gridlock (box blocking, conflict zones), then pedestrian social force, burn-in (G6), accumulation layers.
+
 ## 2026-10-17
 
 **Done**
