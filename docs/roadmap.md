@@ -58,7 +58,8 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 - [ ] Pan and continuous zoom from whole city to a single person
 - [ ] Pause, resume, speed control
 - [ ] Click an agent: current goal, reason, needs, mood
-- [ ] Edit needs and mood, force a goal (logged as commands)
+- [ ] Edit needs, mood and traits (including personal space) and force a goal, all as logged commands
+- [ ] Inspector option: draw the selected person's personal zone as a ring
 - [ ] Heatmap overlay from accumulation layers
 - [ ] Viewer configuration: default style, allowed styles, scale behavior (`schema/viewer.example.json`), validated before use
 - [ ] Style switcher in the viewer (on the fly, remembered per browser); blueprint is the default

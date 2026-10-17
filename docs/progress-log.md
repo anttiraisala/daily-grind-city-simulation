@@ -25,6 +25,7 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Maintainer confirmed: Ubuntu 24.04 desktop, repository stays public, copyright holder "Antti Raisala".
 - Started the real core (`crates/core`): per-agent RNG, fixed 0.1 s clock, road graph with levels and signals, IDM car-following on finite segments with queue spillback, hand-over between segments, slow-time statistics, state hash. 14 tests, including: no overlaps, red light holds traffic, queue reaches the entrance (G10 solved in the model), same input gives same hash. `citysim bench` runs a synthetic signalised grid.
 - Decided how the world is drawn: switchable visual styles (ten candidates in a style sheet), blueprint as the default, configurable default and allowed list, true-scale geometry in meters with a minimum on-screen size when zoomed out. Added `schema/viewer.example.json`, `ViewerConfig`, `bodyDiameterM` and `laneWidthM`.
+- Defined person size and personal space: body 0.5 m circle; `spaceNeed` is the wanted free gap from body edge to body edge, default distribution 0.2..1.0 m (mean 0.5), any value allowed; zone radius 0.25 + spaceNeed; asymmetric, yields in crowds. Added `setTraits` command.
 - Added stop/cleanup commands for running simulations to the README (Linux, macOS, Windows).
 - Added the Rust workspace skeleton (`crates/core`, `crates/cli`, `crates/server`; `poc/` excluded) and GitHub Actions CI.
 - Phase 1 gaps: G2, G3, G6 only; G1 moves to Phase 4, G5 and G7 before the first year-long run. Population constant; long runs sequential.

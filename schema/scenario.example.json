@@ -11,8 +11,8 @@
     "householdSize": { "mean": 2.2, "sd": 1.0 }
   },
   "traits": {
-    "spaceNeed": { "mean": 0.9, "sd": 0.3, "min": 0.3, "max": 2.0 },
-    "bodyDiameterM": { "mean": 0.5, "sd": 0.04, "min": 0.35, "max": 0.7 },
+    "spaceNeed": { "mean": 0.5, "sd": 0.2, "min": 0.2, "max": 1.0 },
+    "bodyDiameterM": { "mean": 0.5, "sd": 0, "min": 0.5, "max": 0.5 },
     "punctuality": { "mean": 0.7, "sd": 0.2, "min": 0, "max": 1 },
     "carelessness": { "mean": 0.15, "sd": 0.1, "min": 0, "max": 1 },
     "aggression": { "mean": 0.2, "sd": 0.15, "min": 0, "max": 1 },

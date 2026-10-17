@@ -66,8 +66,8 @@ export interface MobileWorkplace {
 
 // Persistent traits (do not change on their own)
 export interface Traits {
-  spaceNeed: number;      // personal distance, m
-  bodyDiameterM: number;  // body size as seen from above; drawn as a circle (default about 0.5 m)
+  bodyDiameterM: number;  // body seen from above, drawn as a circle (default 0.5 m)
+  spaceNeed: number;      // wanted free gap between this person's body edge and others, m (typical 0.2..1.0, any value >= 0 allowed)
   punctuality: number;    // 0..1
   carelessness: number;   // 0..1, carelessness in traffic
   aggression: number;     // 0..1
@@ -182,6 +182,7 @@ export interface SimEvent {
 export type Command =
   | { tick: number; kind: "setNeeds"; agentId: Id; needs: Partial<Needs> }
   | { tick: number; kind: "setMood"; agentId: Id; mood: Partial<Mood> }
+  | { tick: number; kind: "setTraits"; agentId: Id; traits: Partial<Traits> }
   | { tick: number; kind: "forceGoal"; agentId: Id; goal: Goal }
   | { tick: number; kind: "addEdge"; edge: RoadEdge }
   | { tick: number; kind: "removeEdge"; edgeId: Id }
