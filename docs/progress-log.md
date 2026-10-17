@@ -16,10 +16,10 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Editor edits the map only; scenario editing stays manual until the settings panel.
 
 **Found**
-- Big city, one day: 300 s wall time (287x real time), many cars still on the road in the evening (see roadmap item "no gridlock"). The junction model only checks "room and green", so cyclic spillback can lock a grid; this is a G2 problem, not a tuning one.
+- Big city, one day: the first run locked up for good (8,000 cars on the road at midnight). Cause: the junction model only checks "room and green", so full queues in a cycle never move. Added a gridlock breaker (as SUMO does): a vehicle stopped on green with no room for 120 s is removed and counted as arrived. After it, the day completes: 146,845 trips done, 0 cars left, 2,054 teleports (about 2.5 % of car trips), 152 s wall time (569x real time), determinism hash stable. The teleport count is a measure of how much the model is overloaded and is printed by `citysim run`.
 
 **Next**
-- Fix big-city gridlock (box blocking, conflict zones), then pedestrian social force, burn-in (G6), accumulation layers.
+- Replace the gridlock breaker with real junction rules (box blocking, conflict zones, route choice that avoids queues) so teleports go to ~0, then pedestrian social force, burn-in (G6), accumulation layers.
 
 ## 2026-10-17
 

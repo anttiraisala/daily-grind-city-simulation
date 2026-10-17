@@ -74,7 +74,7 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 ## Phase 3: Map editor and OSM import
 
 - [x] Example cities: `cities/tiny-town` (50 residents, 10 cars) and `cities/big-city` (71k residents, generated)
-- [ ] Big city: no gridlock in a one-day run (see progress log 2026-10-18)
+- [~] Big city one-day run completes with a gridlock breaker (2,054 teleports); goal is ~0 teleports via junction rules and queue-aware routing
 
 - [~] Draw roads, footpaths, crossings; place buildings and traffic lights: first browser editor in `editor/` (`docs/city-editor.md`); ramps, curves and scenario editing open
 - [ ] Live road edits as commands, with network epochs
