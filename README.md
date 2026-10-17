@@ -55,6 +55,7 @@ Linux and macOS:
 ```sh
 python3 -m json.tool schema/scenario.example.json > /dev/null && echo "scenario OK"
 python3 -m json.tool schema/map.example.json > /dev/null && echo "map OK"
+python3 -m json.tool schema/viewer.example.json > /dev/null && echo "viewer OK"
 ```
 
 Windows (PowerShell):
@@ -62,6 +63,7 @@ Windows (PowerShell):
 ```powershell
 python -m json.tool schema\scenario.example.json > $null; if ($?) { "scenario OK" }
 python -m json.tool schema\map.example.json > $null; if ($?) { "map OK" }
+python -m json.tool schema\viewer.example.json > $null; if ($?) { "viewer OK" }
 ```
 
 ### 4. Install Rust (for the proof of concept)
