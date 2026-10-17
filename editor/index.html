@@ -1,0 +1,527 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>City editor</title>
+<style>
+  :root { --bg:#0f2a43; --grid:#1d4467; --road:#9fd0ff; --foot:#7fe0b0; --cross:#ffd166; --bld:#2f6b9b; --ui:#16202b; --fg:#e8f1f8; --acc:#ffd166; --bad:#ff6b6b; }
+  * { box-sizing:border-box; }
+  html,body { margin:0; height:100%; background:var(--ui); color:var(--fg); font:13px system-ui,sans-serif; }
+  #app { display:grid; grid-template-columns:230px 1fr 260px; grid-template-rows:auto 1fr auto; height:100%; }
+  header { grid-column:1/4; display:flex; gap:8px; align-items:center; padding:6px 10px; background:#0b141d; flex-wrap:wrap; }
+  header h1 { font-size:14px; margin:0 12px 0 0; }
+  button, select, input { font:inherit; color:var(--fg); background:#243445; border:1px solid #3a4f64; border-radius:4px; padding:4px 8px; }
+  button:hover { background:#2e445a; }
+  button.on { background:var(--acc); color:#111; border-color:var(--acc); }
+  input[type=number] { width:64px; }
+  input[type=text] { width:130px; }
+  #tools, #props { padding:10px; overflow:auto; display:flex; flex-direction:column; gap:6px; background:#121c26; }
+  #tools button { text-align:left; }
+  #canvasWrap { position:relative; overflow:hidden; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; touch-action:none; cursor:crosshair; }
+  footer { grid-column:1/4; padding:4px 10px; background:#0b141d; display:flex; gap:16px; font-size:12px; }
+  h2 { font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:#8aa4bb; margin:10px 0 2px; }
+  label { display:flex; justify-content:space-between; align-items:center; gap:6px; }
+  #msgs { font-size:12px; line-height:1.4; }
+  #msgs .err { color:var(--bad); } #msgs .warn { color:var(--acc); } #msgs .ok { color:#7fe0b0; }
+  @media (max-width: 800px) { #app { grid-template-columns:1fr; grid-template-rows:auto auto 1fr auto auto; } header,footer { grid-column:1; } #tools { flex-direction:row; flex-wrap:wrap; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>City editor</h1>
+    <button id="bNew">New</button>
+    <select id="bExample"><option value="">Load example…</option><option value="../cities/tiny-town/map.json">tiny-town</option><option value="../cities/big-city/map.json">big-city (large)</option></select>
+    <button id="bOpen">Open JSON…</button>
+    <button id="bSave">Save JSON</button>
+    <button id="bUndo">Undo</button>
+    <button id="bRedo">Redo</button>
+    <label>Name <input type="text" id="mapName"></label>
+    <label><input type="checkbox" id="snap" checked> snap</label>
+    <label>grid <input type="number" id="gridSize" value="10" min="1" step="1"> m</label>
+    <button id="bFit">Fit view</button>
+    <input type="file" id="file" accept=".json,application/json" hidden>
+  </header>
+
+  <div id="tools">
+    <h2>Tools</h2>
+    <button data-tool="select">Select / move (V)</button>
+    <button data-tool="road">Road (R)</button>
+    <button data-tool="footpath">Footpath (F)</button>
+    <button data-tool="crossing">Pedestrian crossing (C)</button>
+    <button data-tool="light">Traffic light (L)</button>
+    <button data-tool="building">Building (B)</button>
+    <button data-tool="delete">Delete (X)</button>
+    <h2>Road options</h2>
+    <label>Lanes <select id="optLanes"><option>1</option><option>2</option><option>3</option></select></label>
+    <label>Speed limit km/h <input type="number" id="optSpeed" value="50" min="5" max="130"></label>
+    <label>One way <input type="checkbox" id="optOneWay"></label>
+    <h2>Crossing options</h2>
+    <label>Width m <input type="number" id="optCrossW" value="3" min="1" step="0.5"></label>
+    <h2>Light options</h2>
+    <label>Cycle s <input type="number" id="optCycle" value="60" min="10"></label>
+    <label>Green s <input type="number" id="optGreen" value="26" min="5"></label>
+    <h2>Building options</h2>
+    <label>Kind <select id="optKind"><option>home</option><option>office</option><option>shop</option><option>factory</option><option>restaurant</option><option>school</option><option>hospital</option><option>other</option></select></label>
+    <h2>View</h2>
+    <label>Show ids <input type="checkbox" id="showIds"></label>
+    <div style="color:#8aa4bb">Wheel: zoom. Right or middle drag, or Space + drag: pan. Esc: end a road chain. Ctrl+Z / Ctrl+Y: undo / redo.</div>
+  </div>
+
+  <div id="canvasWrap"><canvas id="cv"></canvas></div>
+
+  <div id="props">
+    <h2>Selection</h2>
+    <div id="sel">Nothing selected.</div>
+    <h2>Summary</h2>
+    <div id="summary"></div>
+    <h2>Validation</h2>
+    <div id="msgs"></div>
+  </div>
+
+  <footer><span id="status">Ready.</span><span id="coords"></span></footer>
+</div>
+
+<script>
+"use strict";
+// ---------------------------------------------------------------------------------------------
+// Model: exactly the map JSON of the simulation (schema/types.ts, map format v0.2).
+// ---------------------------------------------------------------------------------------------
+const $ = id => document.getElementById(id);
+let map = emptyMap("new_city");
+let undoStack = [], redoStack = [];
+let tool = "select";
+let sel = null;                 // {type:'node'|'edge'|'building'|'light', id}
+let chain = null;               // node id where the current road/footpath chain continues
+let dragNode = null, dragMoved = false, buildStart = null, mouse = {x:0, y:0};
+let view = {cx:150, cy:0, scale:2};   // scale = pixels per metre, y axis points up on screen
+const cv = $("cv"), ctx = cv.getContext("2d");
+
+function emptyMap(name) {
+  return { name, defaults:{laneWidthM:3.5, footpathWidthM:2.0}, nodes:[], edges:[], trafficLights:[], buildings:[], mobileWorkplaces:[] };
+}
+const nextId = (list, floor = 1) => list.reduce((m, o) => Math.max(m, o.id), floor - 1) + 1;
+const nodeById = id => map.nodes.find(n => n.id === id);
+const edgeById = id => map.edges.find(e => e.id === id);
+const isRoadEdge = e => e.kind === "road" || e.kind === "ramp";
+function nodeKinds(n) {            // a node is a road node, a foot node, or both (shared)
+  let road = false, foot = false;
+  for (const e of map.edges) if (e.from === n.id || e.to === n.id) { if (isRoadEdge(e)) road = true; else foot = true; }
+  return { road, foot };
+}
+const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+
+// ---------------------------------------------------------------------------------------------
+// Undo / redo by snapshot (maps are small enough for the editor use; the big city is for viewing).
+// ---------------------------------------------------------------------------------------------
+function snapshot() { undoStack.push(JSON.stringify(map)); if (undoStack.length > 100) undoStack.shift(); redoStack = []; }
+function restore(s) { map = JSON.parse(s); sel = null; chain = null; refresh(); }
+function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(map)); restore(undoStack.pop()); }
+function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(map)); restore(redoStack.pop()); }
+
+// ---------------------------------------------------------------------------------------------
+// Coordinates
+// ---------------------------------------------------------------------------------------------
+function resize() { const r = cv.getBoundingClientRect(), d = window.devicePixelRatio || 1; cv.width = r.width * d; cv.height = r.height * d; draw(); }
+const toScreen = p => ({ x:(p.x - view.cx) * view.scale + cv.clientWidth / 2, y:-(p.y - view.cy) * view.scale + cv.clientHeight / 2 });
+const toWorld = s => ({ x:(s.x - cv.clientWidth / 2) / view.scale + view.cx, y:-(s.y - cv.clientHeight / 2) / view.scale + view.cy });
+function snapPt(p) {
+  if (!$("snap").checked) return { x:Math.round(p.x * 10) / 10, y:Math.round(p.y * 10) / 10 };
+  const g = Math.max(1, +$("gridSize").value || 10);
+  return { x:Math.round(p.x / g) * g, y:Math.round(p.y / g) * g };
+}
+function evPos(ev) { const r = cv.getBoundingClientRect(); return { x:ev.clientX - r.left, y:ev.clientY - r.top }; }
+
+// ---------------------------------------------------------------------------------------------
+// Hit testing
+// ---------------------------------------------------------------------------------------------
+function hitNode(w, filter) {
+  const tol = 9 / view.scale; let best = null, bd = tol;
+  for (const n of map.nodes) { if (filter && !filter(n)) continue; const d = dist(n.pos, w); if (d < bd) { bd = d; best = n; } }
+  return best;
+}
+function segDist(p, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, l2 = dx * dx + dy * dy;
+  let t = l2 ? ((p.x - a.x) * dx + (p.y - a.y) * dy) / l2 : 0; t = Math.max(0, Math.min(1, t));
+  return { d:Math.hypot(p.x - a.x - t * dx, p.y - a.y - t * dy), t };
+}
+function hitEdge(w, filter) {
+  const tol = 7 / view.scale; let best = null, bd = tol;
+  for (const e of map.edges) {
+    if (filter && !filter(e)) continue;
+    const a = nodeById(e.from), b = nodeById(e.to); if (!a || !b) continue;
+    const s = segDist(w, a.pos, b.pos);
+    if (s.d < bd) { bd = s.d; best = { edge:e, t:s.t }; }
+  }
+  return best;
+}
+function inPoly(p, poly) {
+  let c = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++)
+    if ((poly[i].y > p.y) !== (poly[j].y > p.y) && p.x < (poly[j].x - poly[i].x) * (p.y - poly[i].y) / (poly[j].y - poly[i].y) + poly[i].x) c = !c;
+  return c;
+}
+const hitBuilding = w => [...map.buildings].reverse().find(b => inPoly(w, b.footprint));
+
+// ---------------------------------------------------------------------------------------------
+// Editing operations
+// ---------------------------------------------------------------------------------------------
+function addNode(pos) { const n = { id:nextId(map.nodes), pos:{ x:pos.x, y:pos.y }, level:0 }; map.nodes.push(n); return n; }
+function edgeExists(a, b, kind) { return map.edges.some(e => (e.kind === kind || (isRoadEdge(e) && kind === "road")) && ((e.from === a && e.to === b) || (e.from === b && e.to === a))); }
+function addEdge(a, b, kind) {
+  if (a === b || edgeExists(a, b, kind)) return null;
+  const e = { id:nextId(map.edges), from:a, to:b, kind, lanes:1, oneWay:false };
+  if (kind === "road") { e.lanes = +$("optLanes").value; e.speedLimit = Math.round(+$("optSpeed").value / 3.6 * 10) / 10; e.oneWay = $("optOneWay").checked; }
+  map.edges.push(e); return e;
+}
+function removeNodeIfOrphan(id) {
+  const n = nodeById(id); if (!n) return;
+  if (map.edges.some(e => e.from === id || e.to === id)) return;
+  if (map.buildings.some(b => b.entranceNodeId === id || b.doorNodeId === id)) return;
+  if (map.trafficLights.some(l => l.nodeId === id)) return;
+  map.nodes = map.nodes.filter(x => x.id !== id);
+}
+function deleteEdge(id) {
+  const e = edgeById(id); if (!e) return;
+  // Deleting a road also deletes the crossings across it.
+  for (const c of map.edges.filter(c => c.crossing && c.crossing.edgeId === id)) deleteEdge(c.id);
+  map.edges = map.edges.filter(x => x.id !== id);
+  for (const l of map.trafficLights) for (const p of l.phases) p.edgeIds = p.edgeIds.filter(x => x !== id);
+  removeNodeIfOrphan(e.from); removeNodeIfOrphan(e.to);
+}
+function deleteNode(id) {
+  for (const e of map.edges.filter(e => e.from === id || e.to === id)) deleteEdge(e.id);
+  map.trafficLights = map.trafficLights.filter(l => l.nodeId !== id);
+  const n = nodeById(id); if (n) delete n.trafficLightId;
+  for (const b of map.buildings) { if (b.entranceNodeId === id) b.entranceNodeId = 0; if (b.doorNodeId === id) delete b.doorNodeId; }
+  map.nodes = map.nodes.filter(n => n.id !== id);
+}
+function splitEdge(e, t, pos) {
+  // Splitting an edge in the middle keeps its attributes on both halves. Crossings reference
+  // an edge by id and t, so an edge that carries crossings is not split.
+  if (map.edges.some(c => c.crossing && c.crossing.edgeId === e.id)) { status("This road has crossings; delete them before connecting into its middle."); return null; }
+  const n = addNode(pos);
+  const second = Object.assign({}, e, { id:nextId(map.edges), from:n.id, to:e.to });
+  e.to = n.id; map.edges.push(second);
+  for (const l of map.trafficLights) for (const p of l.phases) if (p.edgeIds.includes(e.id)) { /* regenerated on save */ }
+  return n;
+}
+function pickNodeForChain(w, kind) {
+  const filter = kind === "road" ? (n => !(nodeKinds(n).foot && !nodeKinds(n).road)) : (n => !(nodeKinds(n).road && !nodeKinds(n).foot));
+  const n = hitNode(w, filter); if (n) return n;
+  const he = hitEdge(w, e => kind === "road" ? e.kind === "road" : e.kind === "footpath");
+  if (he && he.t > 0.02 && he.t < 0.98) { const p = snapPt(w); const sn = splitEdge(he.edge, he.t, projectOn(he.edge, w)); if (sn) return sn; return null; }
+  return addNode(snapPt(w));
+}
+function projectOn(e, w) {
+  const a = nodeById(e.from).pos, b = nodeById(e.to).pos, s = segDist(w, a, b);
+  return { x:Math.round((a.x + (b.x - a.x) * s.t) * 10) / 10, y:Math.round((a.y + (b.y - a.y) * s.t) * 10) / 10 };
+}
+function addCrossing(he) {
+  const e = he.edge; if (e.kind !== "road") return;
+  if (map.edges.some(c => c.crossing && c.crossing.edgeId === e.id && Math.abs(c.crossing.t - he.t) < 0.05)) { status("There is already a crossing here."); return; }
+  const a = nodeById(e.from).pos, b = nodeById(e.to).pos, len = dist(a, b);
+  if (len < 12) { status("Road segment too short for a crossing."); return; }
+  const lanes = e.lanes || 1, half = (e.oneWay ? lanes : lanes) * (map.defaults.laneWidthM || 3.5) + 1.5;
+  const t = Math.max(0.05, Math.min(0.95, he.t));
+  const p = { x:a.x + (b.x - a.x) * t, y:a.y + (b.y - a.y) * t };
+  const nx = -(b.y - a.y) / len, ny = (b.x - a.x) / len;
+  const mk = s => addNode({ x:Math.round((p.x + nx * half * s) * 10) / 10, y:Math.round((p.y + ny * half * s) * 10) / 10 });
+  const n1 = mk(1), n2 = mk(-1);
+  const c = { id:nextId(map.edges), from:n1.id, to:n2.id, kind:"crossing", lanes:1, oneWay:false, widthM:+$("optCrossW").value, crossing:{ edgeId:e.id, t:Math.round(t * 10000) / 10000 } };
+  map.edges.push(c); sel = { type:"edge", id:c.id };
+}
+function toggleLight(n) {
+  const existing = map.trafficLights.find(l => l.nodeId === n.id);
+  if (existing) { map.trafficLights = map.trafficLights.filter(l => l !== existing); delete n.trafficLightId; return; }
+  if (!nodeKinds(n).road) { status("Traffic lights go on road nodes."); return; }
+  const l = { id:nextId(map.trafficLights), nodeId:n.id, cycleSeconds:+$("optCycle").value, phases:[], _green:+$("optGreen").value };
+  map.trafficLights.push(l); n.trafficLightId = l.id; sel = { type:"light", id:l.id };
+}
+function addBuilding(a, b) {
+  const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y);
+  if (x1 - x0 < 4 || y1 - y0 < 4) return;
+  const kind = $("optKind").value, area = (x1 - x0) * (y1 - y0), c = { x:(x0 + x1) / 2, y:(y0 + y1) / 2 };
+  const capacity = kind === "home" ? { residents:Math.max(1, Math.round(area / 60)) }
+    : kind === "shop" || kind === "restaurant" ? { jobs:Math.max(1, Math.round(area / 50)), visitors:Math.max(1, Math.round(area / 10)) }
+    : { jobs:Math.max(1, Math.round(area / 20)), visitors:Math.round(area / 100) };
+  const open = kind === "home" ? [{ from:0, to:1440 }] : kind === "shop" || kind === "restaurant" ? [{ from:480, to:1260 }] : [{ from:360, to:1200 }];
+  const road = nearestNode(c, n => nodeKinds(n).road), foot = nearestNode(c, n => nodeKinds(n).foot && !nodeKinds(n).road);
+  const bld = { id:nextId(map.buildings), kind, footprint:[{x:x0,y:y0},{x:x1,y:y0},{x:x1,y:y1},{x:x0,y:y1}], entranceNodeId:road ? road.id : 0, capacity, open, flammability:0.4 };
+  if (foot) bld.doorNodeId = foot.id;
+  map.buildings.push(bld); sel = { type:"building", id:bld.id };
+  if (!road) status("Building added, but there is no road node yet: connect it to a road (see Validation).");
+}
+function nearestNode(p, filter) { let best = null, bd = 1e18; for (const n of map.nodes) { if (filter && !filter(n)) continue; const d = dist(n.pos, p); if (d < bd) { bd = d; best = n; } } return best; }
+
+// ---------------------------------------------------------------------------------------------
+// Traffic-light phases are derived from geometry when saving: the two axes alternate, and a
+// crossing at the light walks while the road it crosses is red.
+// ---------------------------------------------------------------------------------------------
+function derivePhases(l) {
+  const n = nodeById(l.nodeId); if (!n) return;
+  const green = l._green || l.phases.map(p => p.greenSeconds)[0] || Math.round(l.cycleSeconds * 0.43);
+  const axis = e => { const o = nodeById(e.from === n.id ? e.to : e.from).pos; return Math.abs(o.x - n.pos.x) >= Math.abs(o.y - n.pos.y) ? 0 : 1; };
+  const groups = [[], []];
+  for (const e of map.edges) if (e.kind === "road" && (e.from === n.id || e.to === n.id)) groups[axis(e)].push(e.id);
+  const cross = [[], []];                 // crossings that walk during phase k
+  for (const c of map.edges) {
+    if (!c.crossing) continue; const r = edgeById(c.crossing.edgeId); if (!r || (r.from !== n.id && r.to !== n.id)) continue;
+    const near = c.crossing.t < 0.5 ? r.from : r.to; if (near !== n.id) continue;
+    cross[1 - axis(r)].push(c.id);        // walks while the crossed road (axis) is red
+  }
+  l.phases = [];
+  [0, 1].forEach(k => { const ids = groups[k].concat(cross[k]); if (ids.length) l.phases.push({ edgeIds:ids, startSecond:k * Math.round(l.cycleSeconds / 2), greenSeconds:green }); });
+  l._green = green;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Validation: mirrors the checks in crates/core/src/map.rs; `citysim check-map` is authoritative.
+// ---------------------------------------------------------------------------------------------
+function validate() {
+  const errs = [], warns = [], ids = new Set();
+  for (const n of map.nodes) { if (ids.has(n.id)) errs.push(`duplicate node id ${n.id}`); ids.add(n.id); }
+  const eids = new Set();
+  for (const e of map.edges) {
+    if (eids.has(e.id)) errs.push(`duplicate edge id ${e.id}`); eids.add(e.id);
+    if (!ids.has(e.from) || !ids.has(e.to)) errs.push(`edge ${e.id}: unknown node`);
+    else if (e.from === e.to) errs.push(`edge ${e.id}: from equals to`);
+    if (e.kind === "road" && !(e.speedLimit > 0)) errs.push(`edge ${e.id}: road needs a speed limit`);
+    if (e.crossing) {
+      const r = edgeById(e.crossing.edgeId);
+      if (!r || !isRoadEdge(r)) errs.push(`crossing ${e.id}: refers to a missing road edge`);
+      if (!(e.crossing.t > 0 && e.crossing.t < 1)) errs.push(`crossing ${e.id}: t must be inside (0,1)`);
+      for (const nid of [e.from, e.to]) if (map.edges.filter(x => x !== e && (x.from === nid || x.to === nid)).length === 0) warns.push(`crossing ${e.id}: one end has no footpath; pedestrians cannot reach it`);
+    }
+  }
+  for (const l of map.trafficLights) {
+    const n = nodeById(l.nodeId);
+    if (!n) { errs.push(`light ${l.id}: unknown node`); continue; }
+    const appr = map.edges.filter(e => e.kind === "road" && (e.from === n.id || e.to === n.id)).length;
+    if (appr < 3) warns.push(`light ${l.id}: fewer than 3 roads at the node`);
+  }
+  for (const b of map.buildings) {
+    if (b.footprint.length < 3) errs.push(`building ${b.id}: footprint needs 3 points`);
+    const en = nodeById(b.entranceNodeId);
+    if (!en) errs.push(`building ${b.id}: no entrance road node (connect a road near it)`);
+    else if (!nodeKinds(en).road) errs.push(`building ${b.id}: entrance node is not on a road`);
+    if (b.doorNodeId && !nodeById(b.doorNodeId)) errs.push(`building ${b.id}: unknown door node`);
+    if (!b.doorNodeId) warns.push(`building ${b.id}: no footpath door node; pedestrians use the road node`);
+  }
+  if (!map.buildings.some(b => b.kind === "home")) warns.push("no home building");
+  if (!map.buildings.some(b => (b.capacity || {}).jobs > 0)) warns.push("no workplace");
+  return { errs, warns };
+}
+
+// ---------------------------------------------------------------------------------------------
+// Drawing
+// ---------------------------------------------------------------------------------------------
+function draw() {
+  const d = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--bg"); ctx.fillRect(0, 0, W, H);
+  // grid
+  const g = Math.max(1, +$("gridSize").value || 10) * (view.scale < 1 ? 10 : 1);
+  if (g * view.scale > 6) {
+    const a = toWorld({ x:0, y:H }), b = toWorld({ x:W, y:0 });
+    ctx.strokeStyle = "#1d4467"; ctx.lineWidth = 1; ctx.beginPath();
+    for (let x = Math.floor(a.x / g) * g; x <= b.x; x += g) { const s = toScreen({ x, y:0 }).x; ctx.moveTo(s, 0); ctx.lineTo(s, H); }
+    for (let y = Math.floor(a.y / g) * g; y <= b.y; y += g) { const s = toScreen({ x:0, y }).y; ctx.moveTo(0, s); ctx.lineTo(W, s); }
+    ctx.stroke();
+  }
+  const big = map.edges.length > 5000;
+  // buildings
+  for (const b of map.buildings) {
+    ctx.beginPath(); b.footprint.forEach((p, i) => { const s = toScreen(p); i ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y); }); ctx.closePath();
+    ctx.fillStyle = b.kind === "home" ? "#2f6b9b" : b.kind === "shop" || b.kind === "restaurant" ? "#8a6bb0" : "#b08a3a"; ctx.globalAlpha = .75; ctx.fill(); ctx.globalAlpha = 1;
+    ctx.strokeStyle = isSel("building", b.id) ? "#fff" : "#cfe6f7"; ctx.lineWidth = isSel("building", b.id) ? 2 : 1; ctx.stroke();
+  }
+  // edges
+  const laneW = map.defaults.laneWidthM || 3.5, footW = map.defaults.footpathWidthM || 2;
+  for (const e of map.edges) {
+    const a = nodeById(e.from), b = nodeById(e.to); if (!a || !b) continue;
+    const A = toScreen(a.pos), B = toScreen(b.pos);
+    if ((A.x < -50 && B.x < -50) || (A.x > W + 50 && B.x > W + 50) || (A.y < -50 && B.y < -50) || (A.y > H + 50 && B.y > H + 50)) continue;
+    let w, col;
+    if (e.kind === "footpath") { w = footW; col = "#7fe0b0"; }
+    else if (e.kind === "crossing") { w = e.widthM || 3; col = "#ffd166"; }
+    else { w = (e.lanes || 1) * laneW * (e.oneWay ? 1 : 2); col = "#9fd0ff"; }
+    ctx.lineCap = "butt"; ctx.strokeStyle = isSel("edge", e.id) ? "#fff" : col;
+    ctx.lineWidth = Math.max(big ? 1 : 2, w * view.scale);
+    if (e.kind === "crossing") ctx.setLineDash([Math.max(2, view.scale), Math.max(2, view.scale)]); else ctx.setLineDash([]);
+    ctx.globalAlpha = e.kind === "road" ? 0.55 : 0.9;
+    ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke();
+    ctx.globalAlpha = 1; ctx.setLineDash([]);
+    if (e.kind === "road" && !big && view.scale > 1.2) { ctx.strokeStyle = "#0f2a43"; ctx.lineWidth = 1; ctx.setLineDash([6, 6]); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]); }
+    if (e.oneWay && !big) arrow(A, B);
+    if ($("showIds").checked && !big) { ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.fillText("e" + e.id, (A.x + B.x) / 2 + 3, (A.y + B.y) / 2 - 3); }
+  }
+  // nodes
+  if (!big || view.scale > 0.8) for (const n of map.nodes) {
+    const s = toScreen(n.pos); if (s.x < -10 || s.y < -10 || s.x > W + 10 || s.y > H + 10) continue;
+    const k = nodeKinds(n), light = !!n.trafficLightId;
+    ctx.beginPath(); ctx.arc(s.x, s.y, light ? 6 : isSel("node", n.id) ? 5 : 3, 0, 7);
+    ctx.fillStyle = light ? "#ff6b6b" : isSel("node", n.id) ? "#fff" : k.road ? "#d6ecff" : "#bff3d9"; ctx.fill();
+    if (n.id === chain) { ctx.strokeStyle = "#ffd166"; ctx.lineWidth = 2; ctx.stroke(); }
+    if ($("showIds").checked && !big) { ctx.fillStyle = "#fff"; ctx.font = "10px sans-serif"; ctx.fillText("n" + n.id, s.x + 6, s.y - 6); }
+  }
+  // building doors and entrances
+  for (const b of map.buildings) { const en = nodeById(b.entranceNodeId); if (en && isSel("building", b.id)) { const c = centroid(b.footprint), s1 = toScreen(c), s2 = toScreen(en.pos); ctx.strokeStyle = "#fff"; ctx.setLineDash([3, 3]); ctx.beginPath(); ctx.moveTo(s1.x, s1.y); ctx.lineTo(s2.x, s2.y); ctx.stroke(); ctx.setLineDash([]); } }
+  // previews
+  if (chain) { const n = nodeById(chain); if (n) { const s = toScreen(n.pos), m = toScreen(snapPt(toWorld(mouse))); ctx.strokeStyle = "#ffd166"; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(m.x, m.y); ctx.stroke(); ctx.setLineDash([]); } }
+  if (buildStart) { const a = toScreen(buildStart), b = toScreen(snapPt(toWorld(mouse))); ctx.strokeStyle = "#ffd166"; ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(a.x - b.x), Math.abs(a.y - b.y)); }
+  // scale bar
+  const bar = niceLen(80 / view.scale); ctx.fillStyle = "#fff"; ctx.fillRect(12, H - 22, bar * view.scale, 3); ctx.font = "11px sans-serif"; ctx.fillText(bar + " m", 12, H - 28);
+}
+function arrow(A, B) { const mx = (A.x + B.x) / 2, my = (A.y + B.y) / 2, a = Math.atan2(B.y - A.y, B.x - A.x); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.moveTo(mx + Math.cos(a) * 6, my + Math.sin(a) * 6); ctx.lineTo(mx + Math.cos(a + 2.5) * 6, my + Math.sin(a + 2.5) * 6); ctx.lineTo(mx + Math.cos(a - 2.5) * 6, my + Math.sin(a - 2.5) * 6); ctx.fill(); }
+function niceLen(x) { const p = Math.pow(10, Math.floor(Math.log10(x))); const m = x / p; return (m < 2 ? 1 : m < 5 ? 2 : 5) * p; }
+function centroid(f) { return { x:f.reduce((s, p) => s + p.x, 0) / f.length, y:f.reduce((s, p) => s + p.y, 0) / f.length }; }
+const isSel = (t, id) => sel && sel.type === t && sel.id === id;
+
+// ---------------------------------------------------------------------------------------------
+// Pointer handling
+// ---------------------------------------------------------------------------------------------
+let panning = null, spaceDown = false;
+cv.addEventListener("contextmenu", ev => ev.preventDefault());
+cv.addEventListener("pointerdown", ev => {
+  const s = evPos(ev), w = toWorld(s); cv.setPointerCapture(ev.pointerId);
+  if (ev.button === 1 || ev.button === 2 || spaceDown) { panning = { sx:s.x, sy:s.y, cx:view.cx, cy:view.cy }; return; }
+  if (ev.button !== 0) return;
+  if (tool === "select") {
+    const n = hitNode(w);
+    if (n) { sel = { type:"node", id:n.id }; dragNode = n; dragMoved = false; snapshot(); }
+    else { const he = hitEdge(w); if (he) sel = { type:"edge", id:he.edge.id }; else { const b = hitBuilding(w); sel = b ? { type:"building", id:b.id } : null; } }
+    refresh();
+  } else if (tool === "road" || tool === "footpath") {
+    snapshot();
+    const n = pickNodeForChain(w, tool);
+    if (!n) { undoStack.pop(); return; }
+    if (chain && chain !== n.id) { const e = addEdge(chain, n.id, tool); if (e) sel = { type:"edge", id:e.id }; }
+    chain = n.id; refresh();
+  } else if (tool === "crossing") {
+    const he = hitEdge(w, e => e.kind === "road"); if (he) { snapshot(); addCrossing(he); refresh(); } else status("Click on a road.");
+  } else if (tool === "light") {
+    const n = hitNode(w, n => nodeKinds(n).road); if (n) { snapshot(); toggleLight(n); refresh(); } else status("Click on a road node (intersection).");
+  } else if (tool === "building") {
+    buildStart = snapPt(w);
+  } else if (tool === "delete") {
+    const n = hitNode(w); snapshot();
+    if (n) deleteNode(n.id); else { const he = hitEdge(w); if (he) deleteEdge(he.edge.id); else { const b = hitBuilding(w); if (b) map.buildings = map.buildings.filter(x => x !== b); else undoStack.pop(); } }
+    sel = null; refresh();
+  }
+});
+cv.addEventListener("pointermove", ev => {
+  const s = evPos(ev); mouse = s; const w = toWorld(s);
+  $("coords").textContent = `x ${w.x.toFixed(1)} m, y ${w.y.toFixed(1)} m`;
+  if (panning) { view.cx = panning.cx - (s.x - panning.sx) / view.scale; view.cy = panning.cy + (s.y - panning.sy) / view.scale; }
+  else if (dragNode) { dragNode.pos = snapPt(w); dragMoved = true; }
+  draw();
+});
+cv.addEventListener("pointerup", ev => {
+  panning = null;
+  if (dragNode) { if (!dragMoved) undoStack.pop(); dragNode = null; refresh(); }
+  if (buildStart) { const w = snapPt(toWorld(evPos(ev))); snapshot(); addBuilding(buildStart, w); buildStart = null; refresh(); }
+});
+cv.addEventListener("dblclick", () => { chain = null; draw(); });
+cv.addEventListener("wheel", ev => {
+  ev.preventDefault(); const s = evPos(ev), before = toWorld(s);
+  view.scale = Math.max(0.05, Math.min(60, view.scale * Math.exp(-ev.deltaY * 0.0015)));
+  const after = toWorld(s); view.cx += before.x - after.x; view.cy += before.y - after.y; draw();
+}, { passive:false });
+window.addEventListener("keydown", ev => {
+  if (ev.target.tagName === "INPUT" || ev.target.tagName === "SELECT") return;
+  if (ev.code === "Space") { spaceDown = true; ev.preventDefault(); }
+  const k = ev.key.toLowerCase();
+  if ((ev.ctrlKey || ev.metaKey) && k === "z") { ev.preventDefault(); undo(); return; }
+  if ((ev.ctrlKey || ev.metaKey) && (k === "y" || (ev.shiftKey && k === "z"))) { ev.preventDefault(); redo(); return; }
+  if (k === "escape") { chain = null; buildStart = null; draw(); return; }
+  const keys = { v:"select", r:"road", f:"footpath", c:"crossing", l:"light", b:"building", x:"delete" };
+  if (keys[k]) setTool(keys[k]);
+  if ((k === "delete" || k === "backspace") && sel) { snapshot(); if (sel.type === "node") deleteNode(sel.id); else if (sel.type === "edge") deleteEdge(sel.id); else if (sel.type === "building") map.buildings = map.buildings.filter(b => b.id !== sel.id); sel = null; refresh(); }
+});
+window.addEventListener("keyup", ev => { if (ev.code === "Space") spaceDown = false; });
+
+// ---------------------------------------------------------------------------------------------
+// UI
+// ---------------------------------------------------------------------------------------------
+function setTool(t) { tool = t; chain = null; buildStart = null; document.querySelectorAll("[data-tool]").forEach(b => b.classList.toggle("on", b.dataset.tool === t)); status("Tool: " + t); draw(); }
+function status(s) { $("status").textContent = s; }
+function refresh() {
+  $("mapName").value = map.name;
+  const hom = map.buildings.filter(b => b.kind === "home").reduce((s, b) => s + (b.capacity.residents || 0), 0), jobs = map.buildings.reduce((s, b) => s + (b.capacity.jobs || 0), 0);
+  $("summary").innerHTML = `${map.nodes.length} nodes<br>${map.edges.filter(isRoadEdge).length} road edges, ${map.edges.filter(e => e.kind === "footpath").length} footpaths, ${map.edges.filter(e => e.kind === "crossing").length} crossings<br>${map.trafficLights.length} traffic lights<br>${map.buildings.length} buildings: homes for ${hom}, ${jobs} jobs`;
+  const v = validate();
+  $("msgs").innerHTML = (v.errs.length || v.warns.length) ? v.errs.map(m => `<div class="err">Error: ${m}</div>`).concat(v.warns.slice(0, 40).map(m => `<div class="warn">${m}</div>`)).join("") : `<div class="ok">No problems found.</div>`;
+  showSel(); draw();
+}
+function showSel() {
+  const el = $("sel"); if (!sel) { el.textContent = "Nothing selected."; return; }
+  let h = "";
+  if (sel.type === "node") { const n = nodeById(sel.id); if (!n) { el.textContent = ""; return; } h = `Node ${n.id}<br>x <input type="number" id="px" value="${n.pos.x}" step="1"> y <input type="number" id="py" value="${n.pos.y}" step="1">`; }
+  else if (sel.type === "edge") { const e = edgeById(sel.id); if (!e) { el.textContent = ""; return; } h = `${e.kind} edge ${e.id} (${e.from} → ${e.to}), ${dist(nodeById(e.from).pos, nodeById(e.to).pos).toFixed(1)} m`;
+    if (e.kind === "road") h += `<label>Lanes <input type="number" id="pl" value="${e.lanes}" min="1" max="4"></label><label>Speed km/h <input type="number" id="ps" value="${Math.round(e.speedLimit * 3.6)}"></label><label>One way <input type="checkbox" id="po" ${e.oneWay ? "checked" : ""}></label>`;
+    if (e.kind === "crossing") h += `<label>Width m <input type="number" id="pw" value="${e.widthM || 3}" step="0.5"></label>`; }
+  else if (sel.type === "building") { const b = map.buildings.find(x => x.id === sel.id); if (!b) { el.textContent = ""; return; } h = `Building ${b.id}<label>Kind <select id="pk">${["home","office","shop","factory","restaurant","school","hospital","other"].map(k => `<option ${k === b.kind ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+    <label>Residents <input type="number" id="pr" value="${b.capacity.residents || 0}" min="0"></label><label>Jobs <input type="number" id="pj" value="${b.capacity.jobs || 0}" min="0"></label><label>Visitors <input type="number" id="pv" value="${b.capacity.visitors || 0}" min="0"></label>
+    <label>Entrance node <input type="number" id="pe" value="${b.entranceNodeId}"></label><label>Door node <input type="number" id="pd" value="${b.doorNodeId || ""}"></label>`; }
+  else if (sel.type === "light") { const l = map.trafficLights.find(x => x.id === sel.id); if (!l) { el.textContent = ""; return; } h = `Traffic light ${l.id} at node ${l.nodeId}<label>Cycle s <input type="number" id="lc" value="${l.cycleSeconds}"></label><label>Green s <input type="number" id="lg" value="${l._green || 26}"></label>`; }
+  el.innerHTML = h;
+  el.querySelectorAll("input,select").forEach(i => i.addEventListener("change", applyProps));
+}
+function applyProps() {
+  snapshot(); const g = id => $(id) && $(id).value;
+  if (sel.type === "node") { const n = nodeById(sel.id); n.pos = { x:+g("px"), y:+g("py") }; }
+  else if (sel.type === "edge") { const e = edgeById(sel.id); if (e.kind === "road") { e.lanes = +g("pl"); e.speedLimit = Math.round(+g("ps") / 3.6 * 10) / 10; e.oneWay = $("po").checked; } if (e.kind === "crossing") e.widthM = +g("pw"); }
+  else if (sel.type === "building") { const b = map.buildings.find(x => x.id === sel.id); b.kind = g("pk"); b.capacity = {}; if (+g("pr")) b.capacity.residents = +g("pr"); if (+g("pj")) b.capacity.jobs = +g("pj"); if (+g("pv")) b.capacity.visitors = +g("pv"); b.entranceNodeId = +g("pe"); if (+g("pd")) b.doorNodeId = +g("pd"); else delete b.doorNodeId; }
+  else if (sel.type === "light") { const l = map.trafficLights.find(x => x.id === sel.id); l.cycleSeconds = +g("lc"); l._green = +g("lg"); }
+  refresh();
+}
+document.querySelectorAll("[data-tool]").forEach(b => b.addEventListener("click", () => setTool(b.dataset.tool)));
+$("bUndo").onclick = undo; $("bRedo").onclick = redo;
+$("bNew").onclick = () => { snapshot(); map = emptyMap("new_city"); sel = null; chain = null; refresh(); };
+$("mapName").onchange = e => { snapshot(); map.name = e.target.value.replace(/[^A-Za-z0-9_\-]/g, "_") || "city"; refresh(); };
+$("showIds").onchange = draw; $("gridSize").onchange = draw;
+$("bFit").onclick = fit;
+function fit() {
+  if (!map.nodes.length) { view = { cx:150, cy:0, scale:2 }; draw(); return; }
+  let x0 = 1e18, y0 = 1e18, x1 = -1e18, y1 = -1e18;
+  for (const n of map.nodes) { x0 = Math.min(x0, n.pos.x); x1 = Math.max(x1, n.pos.x); y0 = Math.min(y0, n.pos.y); y1 = Math.max(y1, n.pos.y); }
+  view.cx = (x0 + x1) / 2; view.cy = (y0 + y1) / 2;
+  view.scale = Math.min(cv.clientWidth / Math.max(20, x1 - x0 + 40), cv.clientHeight / Math.max(20, y1 - y0 + 40)); draw();
+}
+function load(obj, label) {
+  if (!obj || !Array.isArray(obj.nodes) || !Array.isArray(obj.edges)) { status("Not a map file."); return; }
+  snapshot(); map = Object.assign(emptyMap(obj.name || "city"), obj);
+  map.defaults = Object.assign({ laneWidthM:3.5, footpathWidthM:2.0 }, obj.defaults || {});
+  map.buildings = obj.buildings || []; map.trafficLights = obj.trafficLights || [];
+  for (const l of map.trafficLights) { l._green = l.phases && l.phases[0] ? l.phases[0].greenSeconds : 26; const n = nodeById(l.nodeId); if (n) n.trafficLightId = l.id; }
+  sel = null; chain = null; fit(); refresh(); status("Loaded " + label + ".");
+}
+$("bExample").onchange = async ev => {
+  const url = ev.target.value; ev.target.value = ""; if (!url) return;
+  try { const r = await fetch(url); if (!r.ok) throw new Error(r.status); load(await r.json(), url); }
+  catch (err) { status("Could not load " + url + " (serve the repository root with: python3 -m http.server 8000, then open /editor/)."); }
+};
+$("bOpen").onclick = () => $("file").click();
+$("file").onchange = async ev => { const f = ev.target.files[0]; if (!f) return; try { load(JSON.parse(await f.text()), f.name); } catch (e) { status("Invalid JSON: " + e.message); } ev.target.value = ""; };
+function exportMap() {
+  const out = JSON.parse(JSON.stringify(map));
+  for (const l of out.trafficLights) { const real = map.trafficLights.find(x => x.id === l.id); derivePhases(real); l.phases = real.phases; delete l._green; }
+  for (const n of out.nodes) { const l = out.trafficLights.find(x => x.nodeId === n.id); if (l) n.trafficLightId = l.id; else delete n.trafficLightId; }
+  for (const e of out.edges) if (e.kind === "footpath" || e.kind === "crossing") { delete e.speedLimit; }
+  return JSON.stringify(out, null, 2);
+}
+$("bSave").onclick = () => {
+  const v = validate(); if (v.errs.length && !confirm("The map has errors:\n" + v.errs.slice(0, 8).join("\n") + "\nSave anyway?")) return;
+  const blob = new Blob([exportMap() + "\n"], { type:"application/json" }), a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "map.json"; a.click(); URL.revokeObjectURL(a.href); status("Saved map.json. Check it with: citysim check-map map.json");
+};
+// Hooks for automated tests.
+window.__editor = { get map() { return map; }, exportMap, validate, load, setTool, toWorld, toScreen, view: () => view };
+window.addEventListener("resize", resize);
+setTool("select"); resize(); refresh();
+</script>
+</body>
+</html>
