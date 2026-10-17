@@ -1,0 +1,67 @@
+{
+  "name": "example_block",
+  "nodes": [
+    { "id": 1, "pos": { "x": 0, "y": 0 }, "level": 0 },
+    { "id": 2, "pos": { "x": 200, "y": 0 }, "level": 0, "trafficLightId": 1 },
+    { "id": 3, "pos": { "x": 400, "y": 0 }, "level": 0 },
+    { "id": 4, "pos": { "x": 200, "y": 150 }, "level": 0 },
+    { "id": 5, "pos": { "x": 200, "y": -150 }, "level": 0 },
+    { "id": 6, "pos": { "x": 150, "y": 0 }, "level": 1 },
+    { "id": 7, "pos": { "x": 250, "y": 0 }, "level": 1 }
+  ],
+  "edges": [
+    { "id": 1, "from": 1, "to": 2, "kind": "road", "lanes": 2, "speedLimit": 13.9, "oneWay": false },
+    { "id": 2, "from": 2, "to": 3, "kind": "road", "lanes": 2, "speedLimit": 13.9, "oneWay": false },
+    { "id": 3, "from": 2, "to": 4, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false },
+    { "id": 4, "from": 2, "to": 5, "kind": "road", "lanes": 1, "speedLimit": 8.3, "oneWay": false },
+    { "id": 5, "from": 1, "to": 6, "kind": "ramp", "lanes": 1, "speedLimit": 8.3, "oneWay": false },
+    { "id": 6, "from": 6, "to": 7, "kind": "road", "lanes": 1, "speedLimit": 11.1, "oneWay": false },
+    { "id": 7, "from": 7, "to": 3, "kind": "ramp", "lanes": 1, "speedLimit": 8.3, "oneWay": false }
+  ],
+  "trafficLights": [
+    {
+      "id": 1,
+      "nodeId": 2,
+      "cycleSeconds": 60,
+      "phases": [
+        { "edgeIds": [1, 2], "startSecond": 0, "greenSeconds": 30 },
+        { "edgeIds": [3, 4], "startSecond": 30, "greenSeconds": 25 }
+      ]
+    }
+  ],
+  "buildings": [
+    {
+      "id": 1, "kind": "home",
+      "footprint": [{ "x": -30, "y": 20 }, { "x": 10, "y": 20 }, { "x": 10, "y": 60 }, { "x": -30, "y": 60 }],
+      "entranceNodeId": 1,
+      "capacity": { "residents": 40 },
+      "open": [{ "from": 0, "to": 1440 }],
+      "flammability": 0.5
+    },
+    {
+      "id": 2, "kind": "office",
+      "footprint": [{ "x": 380, "y": 20 }, { "x": 430, "y": 20 }, { "x": 430, "y": 70 }, { "x": 380, "y": 70 }],
+      "entranceNodeId": 3,
+      "capacity": { "jobs": 60, "visitors": 20 },
+      "open": [{ "from": 360, "to": 1080 }],
+      "flammability": 0.3
+    },
+    {
+      "id": 3, "kind": "shop",
+      "footprint": [{ "x": 220, "y": 160 }, { "x": 260, "y": 160 }, { "x": 260, "y": 200 }, { "x": 220, "y": 200 }],
+      "entranceNodeId": 4,
+      "capacity": { "jobs": 8, "visitors": 40 },
+      "open": [{ "from": 480, "to": 1260 }],
+      "flammability": 0.4
+    },
+    {
+      "id": 4, "kind": "hospital",
+      "footprint": [{ "x": 220, "y": -210 }, { "x": 280, "y": -210 }, { "x": 280, "y": -160 }, { "x": 220, "y": -160 }],
+      "entranceNodeId": 5,
+      "capacity": { "jobs": 30, "visitors": 20 },
+      "open": [{ "from": 0, "to": 1440 }],
+      "flammability": 0.2
+    }
+  ],
+  "mobileWorkplaces": []
+}

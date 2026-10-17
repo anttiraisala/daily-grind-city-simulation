@@ -1,0 +1,132 @@
+{
+  "seed": 12345,
+  "time": {
+    "tickSeconds": 0.1,
+    "needsUpdateSeconds": 60,
+    "startTime": "00:00",
+    "daysToRun": 7
+  },
+  "population": {
+    "residents": 2000,
+    "householdSize": { "mean": 2.2, "sd": 1.0 }
+  },
+  "traits": {
+    "spaceNeed": { "mean": 0.9, "sd": 0.3, "min": 0.3, "max": 2.0 },
+    "punctuality": { "mean": 0.7, "sd": 0.2, "min": 0, "max": 1 },
+    "carelessness": { "mean": 0.15, "sd": 0.1, "min": 0, "max": 1 },
+    "aggression": { "mean": 0.2, "sd": 0.15, "min": 0, "max": 1 },
+    "sociability": { "mean": 0.5, "sd": 0.25, "min": 0, "max": 1 },
+    "impulsivity": { "mean": 0.3, "sd": 0.2, "min": 0, "max": 1 },
+    "medicalRisk": { "mean": 0.05, "sd": 0.05, "min": 0, "max": 1 },
+    "violentIntentShare": 0.002,
+    "correlations": [
+      { "a": "carelessness", "b": "punctuality", "r": -0.3 },
+      { "a": "aggression", "b": "impulsivity", "r": 0.4 }
+    ]
+  },
+  "occupations": [
+    {
+      "kind": "office",
+      "share": 0.38,
+      "remoteShare": 0.15,
+      "start": [
+        { "time": "08:00", "sdMinutes": 30, "weight": 0.5 },
+        { "time": "07:00", "sdMinutes": 20, "weight": 0.2 },
+        { "time": "10:00", "sdMinutes": 30, "weight": 0.3 }
+      ],
+      "durationHours": { "mean": 8, "sd": 0.7 },
+      "lunch": {
+        "afterStartHours": { "mean": 4, "sd": 0.5 },
+        "minutes": { "mean": 40, "sd": 10 }
+      }
+    },
+    {
+      "kind": "parttime",
+      "share": 0.10,
+      "remoteShare": 0.10,
+      "start": [
+        { "time": "09:00", "sdMinutes": 90, "weight": 1 }
+      ],
+      "durationHours": { "mean": 5, "sd": 1 },
+      "lunch": null
+    },
+    {
+      "kind": "shift",
+      "share": 0.12,
+      "remoteShare": 0,
+      "shifts": ["06:00-14:00", "14:00-22:00", "22:00-06:00"],
+      "lunch": {
+        "afterStartHours": { "mean": 4, "sd": 0.5 },
+        "minutes": { "mean": 30, "sd": 5 }
+      }
+    },
+    {
+      "kind": "student",
+      "share": 0.12,
+      "remoteShare": 0,
+      "start": [
+        { "time": "08:30", "sdMinutes": 15, "weight": 1 }
+      ],
+      "durationHours": { "mean": 6, "sd": 1 },
+      "lunch": {
+        "afterStartHours": { "mean": 3.5, "sd": 0.3 },
+        "minutes": { "mean": 30, "sd": 5 }
+      }
+    },
+    { "kind": "retired", "share": 0.14 },
+    { "kind": "unemployed", "share": 0.14, "jobSearchRatePerDay": 0.1 }
+  ],
+  "schedule": {
+    "fitToWorkplaceHours": "clamp",
+    "skipWork": { "baseDailyProbability": 0.01, "moodWeight": 0.05, "sleepNeedWeight": 0.03 },
+    "lateToleranceMinutes": { "mean": 3, "sd": 2 }
+  },
+  "commuteEstimate": {
+    "initialFactor": 1.2,
+    "learningRate": 0.3,
+    "safetyMarginByPunctuality": { "atPunctuality0": 0.0, "atPunctuality1": 0.5 },
+    "bufferMinutes": { "mean": 5, "sd": 3 }
+  },
+  "needs": {
+    "hungerPerHour": 0.12,
+    "bladderPerHour": 0.15,
+    "sleepPerHourAwake": 0.06,
+    "socialPerHour": 0.05,
+    "solitudePerHourInCrowd": 0.08,
+    "interruptThreshold": 0.8
+  },
+  "transport": {
+    "ownership": { "car": 0.55, "bike": 0.35, "motorcycle": 0.04 },
+    "modeChoiceWeights": { "time": 1.0, "cost": 0.3, "comfort": 0.2, "habit": 0.5 },
+    "forceCarCount": null,
+    "vehicleSizes": {
+      "car": { "lengthM": 4.5, "widthM": 1.8 },
+      "bike": { "lengthM": 1.8, "widthM": 0.6 },
+      "motorcycle": { "lengthM": 2.1, "widthM": 0.8 },
+      "bus": { "lengthM": 12, "widthM": 2.5 }
+    }
+  },
+  "events": {
+    "medicalEpisode": { "ratePerAgentPerDay": 0.00005 },
+    "houseFire": { "ratePerBuildingPerDay": 0.00003 },
+    "fire": {
+      "survivalBase": 0.9,
+      "survivalDecayPerMinute": 0.03,
+      "spread": { "radiusM": 15, "probabilityPerMinute": 0.01 }
+    },
+    "hazard": { "freeModeCollidesWithBuildings": true }
+  },
+  "emergency": {
+    "ambulancesPerHospital": 3,
+    "policeCarsPerStation": 2,
+    "fireTrucksPerStation": 2,
+    "otherVehiclesYield": true,
+    "ignoreRedLights": true
+  },
+  "output": {
+    "cellSizeM": 10,
+    "binsPerDay": 24,
+    "eventLog": true,
+    "snapshotEveryMinutes": 15
+  }
+}
