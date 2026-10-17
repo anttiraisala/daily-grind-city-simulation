@@ -314,6 +314,32 @@ impl Traffic {
                 continue;
             };
             if front.pos < length {
+                // A queue can halt just short of the junction, a safe gap behind the tail
+                // of the next segment. That counts as blocked too when it never moves.
+                let stuck = green_now[e]
+                    && front.speed < 0.1
+                    && front.leg + 1 < front.route.len()
+                    && self.lanes[front.route[front.leg + 1] as usize]
+                        .back()
+                        .is_some_and(|l| {
+                            (length - front.pos) + (l.pos - self.idm.length)
+                                < 2.0 * self.idm.s0 + 1.0
+                        });
+                if stuck {
+                    self.blocked_ticks[e] += 1;
+                    if self.teleport_after_ticks > 0
+                        && self.blocked_ticks[e] >= self.teleport_after_ticks
+                    {
+                        if let Some(v) = self.lanes[e].pop_front() {
+                            self.finished_ids.push(v.id);
+                        }
+                        self.stats.finished += 1;
+                        self.stats.teleported += 1;
+                        self.blocked_ticks[e] = 0;
+                    }
+                } else {
+                    self.blocked_ticks[e] = 0;
+                }
                 continue;
             }
             if front.leg + 1 >= front.route.len() {
