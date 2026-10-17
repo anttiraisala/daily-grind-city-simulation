@@ -60,6 +60,11 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 - [ ] Click an agent: current goal, reason, needs, mood
 - [ ] Edit needs and mood, force a goal (logged as commands)
 - [ ] Heatmap overlay from accumulation layers
+- [ ] Viewer configuration: default style, allowed styles, scale behavior (`schema/viewer.example.json`), validated before use
+- [ ] Style switcher in the viewer (on the fly, remembered per browser); blueprint is the default
+- [ ] True-scale drawing in meters (people 0.5 m, cars 4.5 x 1.8 m, roads by lane count and lane width) with a minimum on-screen size and a scale bar
+- [ ] Static layer (roads, buildings) drawn once and moved; moving entities drawn in batches; detail level by zoom
+- [ ] Styles beyond blueprint, one at a time: flat map, schematic, top-down realistic first
 - [ ] Settings panel for population, vehicles, trait distributions (writes the scenario JSON)
 - [ ] Replace HTTP polling with a WebSocket (axum); TypeScript and PixiJS viewer with generated types
 - [ ] Phone step 2: WASM build of the core for small offline runs (10-100 agents)

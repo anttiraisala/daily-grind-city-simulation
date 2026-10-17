@@ -1,0 +1,18 @@
+{
+  "defaultStyle": "blueprint",
+  "allowedStyles": [
+    "blueprint",
+    "flat-map",
+    "neon",
+    "schematic",
+    "isometric",
+    "top-down-realistic",
+    "speed-map",
+    "ink",
+    "pixel",
+    "state-colors"
+  ],
+  "strictScale": false,
+  "minScreenPx": { "person": 3, "vehicle": 6 },
+  "rememberChoice": true
+}

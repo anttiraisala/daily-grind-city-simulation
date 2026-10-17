@@ -26,6 +26,7 @@ export interface RoadEdge {
   lanes: number;
   speedLimit: number;          // m/s
   oneWay: boolean;
+  laneWidthM?: number;         // overrides the map default; road width = lanes * laneWidthM
   // A ramp connects levels: the level values of its end nodes tell from where to where.
 }
 
@@ -66,6 +67,7 @@ export interface MobileWorkplace {
 // Persistent traits (do not change on their own)
 export interface Traits {
   spaceNeed: number;      // personal distance, m
+  bodyDiameterM: number;  // body size as seen from above; drawn as a circle (default about 0.5 m)
   punctuality: number;    // 0..1
   carelessness: number;   // 0..1, carelessness in traffic
   aggression: number;     // 0..1
@@ -198,4 +200,21 @@ export interface AccumulationLayer {
   speedSum: Float32Array;       // sum of speeds (divide by the sample count)
   speedSamples: Uint32Array;
   slowSeconds: Float32Array;    // time with speed below the threshold (congestion)
+}
+
+// ---------------------------------------------------------------- VIEWER
+
+// How the world is drawn. Purely a viewer setting: it never changes the simulation,
+// is not a command and is not part of the run log. Geometry is always true to scale
+// (meters from the map and scenario); styles only change how that geometry looks.
+export type VisualStyle =
+  | "blueprint" | "flat-map" | "neon" | "schematic" | "isometric"
+  | "top-down-realistic" | "speed-map" | "ink" | "pixel" | "state-colors";
+
+export interface ViewerConfig {
+  defaultStyle: VisualStyle;        // must be one of allowedStyles
+  allowedStyles: VisualStyle[];     // the user can switch between these on the fly
+  strictScale: boolean;             // true: never enlarge anything, small things vanish when zoomed out
+  minScreenPx: { person: number; vehicle: number }; // when strictScale is false: smallest drawn size, in screen pixels
+  rememberChoice: boolean;          // keep the user's last style per browser
 }

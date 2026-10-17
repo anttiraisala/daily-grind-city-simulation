@@ -1,5 +1,6 @@
 {
   "name": "example_block",
+  "defaults": { "laneWidthM": 3.5, "footpathWidthM": 2.0 },
   "nodes": [
     { "id": 1, "pos": { "x": 0, "y": 0 }, "level": 0 },
     { "id": 2, "pos": { "x": 200, "y": 0 }, "level": 0, "trafficLightId": 1 },

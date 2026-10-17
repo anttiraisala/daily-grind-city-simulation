@@ -33,3 +33,4 @@ jobs:
         run: |
           python3 -m json.tool schema/scenario.example.json > /dev/null
           python3 -m json.tool schema/map.example.json > /dev/null
+          python3 -m json.tool schema/viewer.example.json > /dev/null

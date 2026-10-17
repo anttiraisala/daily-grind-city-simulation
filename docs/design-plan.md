@@ -57,6 +57,16 @@ Non-goals for now: calibration against real data, bit-exact reproducibility acro
 - Architecture (decided 2026-10-17): the core is a deterministic Rust library with no I/O, run natively: a headless command line for batches, plus a server. A browser viewer renders snapshots and sends commands. Commands are tick-stamped messages, so the command log doubles as the network protocol. Phones follow the order under Scale. The proof of concept in `../poc/` demonstrates this slice (see `../poc/README.md`).
 - Tooling consequence: Rust (cargo, clippy, rustfmt, `cargo test`, property tests later) for the core; schemas defined in Rust (serde + schemars) with TypeScript types generated for the viewer; TypeScript, Vite and PixiJS only for the viewer and the map editor. This replaces the earlier TypeScript-only toolchain idea.
 
+### Presentation (decided 2026-10-17)
+
+- The viewer offers several visual styles and the user switches between them on the fly. The ten candidates are in the style sheet (blueprint, flat map, neon, schematic, isometric, top-down realistic, speed map, ink, pixel, state colors); `schema/viewer.example.json` and `ViewerConfig` in `schema/types.ts` define the configuration: the default style, the allowed styles, and the scale behavior.
+- **The default style is blueprint** (thin lines on a dark background, cars as boxes, people as small circles). It is the cheapest to draw and the clearest for reading congestion.
+- **Geometry is true to scale in meters in every style.** A person is a circle about 0.5 m across (`bodyDiameterM` in `Traits`), a car is 4.5 x 1.8 m (`vehicleSizes` in the scenario), a road is `lanes * laneWidthM` wide (3.5 m by default, from the map), buildings use their real footprints. Styles change only how this geometry looks, never its size or position.
+- **True scale conflicts with visibility when zoomed out.** At the scale of a whole city one pixel is many meters, so a 0.5 m person is far smaller than a pixel. Decision: by default the renderer clamps the on-screen size of people and vehicles to a minimum (`minScreenPx`, 3 px and 6 px), so they stay visible; `strictScale: true` turns the clamp off and they vanish when zoomed out. Zoomed in far enough, the clamp has no effect and sizes are exact. The clamp is a rendering detail only. The simulation never uses it. The viewer shows a scale bar, and marks the view as "enlarged" while the clamp is active.
+- **Style is a viewer setting, not simulation state.** Switching it changes nothing in the run, is not a command and is not in the command log (the rule "every manual change is a command" concerns the simulation). Phone and desktop can use different styles of the same run. The last choice can be remembered per browser (`rememberChoice`).
+- Config rules: `allowedStyles` must not be empty, `defaultStyle` must be one of them, unknown style names are an error. The configuration is validated before use like the other JSON files.
+- Levels of detail in drawing are allowed (the simulation stays uniform): far away a vehicle is a dot, nearer a box, closest the full detail of the chosen style. See the cost notes in the style sheet.
+
 ## 3. Gaps found in review
 
 These are not optional extras. Each one affects the core model or the schema.
@@ -207,4 +217,4 @@ The best value for the effort:
 
 ## 7. Open questions
 
-(None at the moment.)
+1. Should the data-coloring styles (speed map, state colors, and the by-type colors of the schematic) become overlays that work on top of any base style, instead of being separate styles? Proposal: yes. A speed overlay over blueprint, or state colors over top-down realistic, is more useful than a fixed pairing, and it keeps the base style list short. Config would then have `defaultOverlay` and `allowedOverlays` next to the style fields.
