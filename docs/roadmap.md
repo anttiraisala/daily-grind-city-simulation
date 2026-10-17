@@ -25,30 +25,30 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 Goal: a deterministic, headless simulation of one district that produces a congestion heatmap.
 
 - [x] Project skeleton: Rust workspace (`crates/core`, `crates/cli`, `crates/server`), tests, CI (GitHub Actions: fmt, clippy, tests, PoC check, JSON validity)
-- [ ] Seeded RNG with one stream per agent
-- [ ] Fixed-step simulation loop and 24-hour clock
+- [x] Seeded RNG with one stream per agent (`crates/core/src/rng.rs`)
+- [x] Fixed-step simulation loop and 24-hour clock (0.1 s ticks, `clock.rs`, `traffic.rs`)
 - [ ] Config loading and validation (scenario + map)
-- [ ] Road graph, z-levels, ramps
+- [~] Road graph, z-levels, ramps (`graph.rs`: nodes with levels, ramp edges, signals; JSON import and level-aware interaction still open)
 - [ ] Spatial hash keyed by (cell, level)
 - [ ] Agents: traits, needs, mood, commitments, goals
 - [ ] Schedule generation from the scenario distributions (start times, shifts, lunch, remote work)
 - [ ] Event-driven decisions; needs updated once per simulated minute
 - [ ] Pathfinding and learned commute estimates
-- [ ] Lane-following vehicles: IDM car-following
-- [ ] Intersections: right of way, conflict zones, traffic lights (G2)
+- [x] Lane-following vehicles: IDM car-following on finite segments with queue spillback (G10), one lane per segment
+- [~] Intersections (G2): fixed-time signals and entry-if-room hand-over done; conflict zones, right of way, turning movements open
 - [ ] Pedestrian movement with social force; pedestrian crossings (G3)
 - [ ] Initial state and burn-in snapshot (G6)
 - [ ] Command log (needs, goals, road edits, pause)
 - [ ] Event log and periodic snapshots
 - [ ] Accumulation layers: dwell time, speed, slow time per cell per hour
-- [ ] Headless CLI runner (I-71)
-- [ ] Determinism test: same seed + same build gives an identical event log
+- [~] Headless CLI runner (I-71): `citysim bench` on a synthetic grid; scenario and map loading open
+- [~] Determinism test: state-hash test for traffic exists; event log open
 
 **Exit criteria:** a 200-agent district runs a simulated week headlessly, the determinism test passes, and the congestion heatmap shows a visible morning and evening peak.
 
 ## Phase 1b: Measurement prototype
 
-- [ ] Synthetic benchmark: agent updates per second on the maintainer's machine
+- [~] Synthetic benchmark: `citysim bench` exists; run it on the maintainer's machine
 - [x] Core language: Rust, native (decided). Re-measure with the real model: the PoC numbers are for a much simpler one
 - [ ] Record measured numbers in `design-plan.md` (replace the estimates)
 

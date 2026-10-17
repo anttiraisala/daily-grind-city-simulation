@@ -79,7 +79,7 @@ These are not optional extras. Each one affects the core model or the schema.
 
 **G9. Independence of parallel weeks.** Running 52 weeks in parallel instead of one sequential year is only valid if nothing carries over from week to week. Learning, demographics, seasons and road wear all carry over. Backlog items that break this assumption are marked "Breaks G9".
 
-**G10. Queue spillback.** A full street must block the streets behind it, and cars cannot exceed jam density. The proof of concept does not do this: its 1M run puts up to 153 cars on a segment that holds 13, which makes congestion look milder and more local than it should. Solved by car following on finite-length lanes (IDM) together with junctions (G2), not by tuning the speed-density formula.
+**G10. Queue spillback.** A full street must block the streets behind it, and cars cannot exceed jam density. The proof of concept does not do this: its 1M run puts up to 153 cars on a segment that holds 13, which makes congestion look milder and more local than it should. Solved by car following on finite-length lanes (IDM) together with junctions (G2), not by tuning the speed-density formula. **Status: the core (`crates/core/src/traffic.rs`) now does this; a test fills a bottleneck queue back to the entrance with no overlaps and no vehicle above jam density.**
 
 ## 4. Roadmap
 

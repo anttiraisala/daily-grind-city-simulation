@@ -217,7 +217,18 @@ cargo run --release -- help                            # all options
 
 After the first build you can also run the compiled program directly: `./target/release/city-poc serve --lan` (on Windows `.\target\release\city-poc.exe serve --lan`).
 
-**5f. Update later:**
+**5f. Try the new simulation core (headless, no browser):**
+
+From the repository root, not from `poc/`:
+
+```sh
+cargo test --workspace --release
+cargo run --release -p citysim-cli -- bench --size 8 --hours 1 --rate 2
+```
+
+It prints vehicles spawned and finished, safety clamps (must be 0), speed, a state hash (the same seed must print the same hash) and the most congested road segments. This core has no viewer yet.
+
+**5g. Update later:**
 
 ```sh
 git pull

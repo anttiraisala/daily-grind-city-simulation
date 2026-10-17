@@ -23,6 +23,7 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Architecture: native Rust core plus a browser viewer. Phones in the order (1) LAN viewer, (2) WASM build for small offline runs, (3) native app only if needed. TypeScript is limited to the viewer and the map editor.
 
 - Maintainer confirmed: Ubuntu 24.04 desktop, repository stays public, copyright holder "Antti Raisala".
+- Started the real core (`crates/core`): per-agent RNG, fixed 0.1 s clock, road graph with levels and signals, IDM car-following on finite segments with queue spillback, hand-over between segments, slow-time statistics, state hash. 14 tests, including: no overlaps, red light holds traffic, queue reaches the entrance (G10 solved in the model), same input gives same hash. `citysim bench` runs a synthetic signalised grid.
 - Added stop/cleanup commands for running simulations to the README (Linux, macOS, Windows).
 - Added the Rust workspace skeleton (`crates/core`, `crates/cli`, `crates/server`; `poc/` excluded) and GitHub Actions CI.
 - Phase 1 gaps: G2, G3, G6 only; G1 moves to Phase 4, G5 and G7 before the first year-long run. Population constant; long runs sequential.
@@ -35,6 +36,8 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - The sandbox used for this work cannot reach crates.io, so the PoC uses only the Rust standard library (hand-written HTTP server, polling instead of WebSocket).
 
 **Next**
+- Run `citysim bench` on the maintainer's machine and compare with the sandbox numbers.
+- Junction model beyond "enter if room": conflict zones, right of way, turning (G2); JSON map loading (needs a JSON parser: serde works in CI and on the maintainer's machine but not in this sandbox).
 - Answer the remaining open questions in `design-plan.md` (which gaps go into Phase 1, population model for year-long runs, sequential vs parallel weeks).
 - Start the Phase 1 core loop with the real road graph from `schema/`.
 
