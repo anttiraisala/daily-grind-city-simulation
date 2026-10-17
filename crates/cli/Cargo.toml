@@ -1,0 +1,14 @@
+[package]
+name = "citysim-cli"
+description = "Headless command-line runner for the city simulation"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "citysim"
+path = "src/main.rs"
+
+[dependencies]
+citysim-core = { path = "../core" }

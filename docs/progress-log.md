@@ -22,6 +22,8 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Two movement modes (lane, free) plus inside-building agents that take no space.
 - Architecture: native Rust core plus a browser viewer. Phones in the order (1) LAN viewer, (2) WASM build for small offline runs, (3) native app only if needed. TypeScript is limited to the viewer and the map editor.
 
+- Maintainer confirmed: Ubuntu 24.04 desktop, repository stays public, copyright holder "Antti Raisala".
+- Added the Rust workspace skeleton (`crates/core`, `crates/cli`, `crates/server`; `poc/` excluded) and GitHub Actions CI.
 - Phase 1 gaps: G2, G3, G6 only; G1 moves to Phase 4, G5 and G7 before the first year-long run. Population constant; long runs sequential.
 
 **Found**
@@ -33,7 +35,6 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 
 **Next**
 - Answer the remaining open questions in `design-plan.md` (which gaps go into Phase 1, population model for year-long runs, sequential vs parallel weeks).
-- Set up the Rust workspace (`crates/core`, `crates/cli`, `crates/server`) and CI; keep `poc/` as a reference until replaced.
 - Start the Phase 1 core loop with the real road graph from `schema/`.
 
 ## 2026-10-16

@@ -1,0 +1,10 @@
+[package]
+name = "citysim-server"
+description = "Live server that streams the simulation to browser viewers"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+citysim-core = { path = "../core" }

@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  rust:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Format
+        run: cargo fmt --all -- --check
+      - name: Clippy (workspace)
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Tests (workspace)
+        run: cargo test --workspace --release
+      - name: Proof of concept builds and passes its tests
+        working-directory: poc
+        run: |
+          cargo test --release
+          cargo run --release -- check --agents 20000
+
+  data:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Example JSON files are valid
+        run: |
+          python3 -m json.tool schema/scenario.example.json > /dev/null
+          python3 -m json.tool schema/map.example.json > /dev/null

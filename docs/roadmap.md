@@ -16,7 +16,7 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 - [ ] Add a JSON Schema (or generated validators) for the scenario and map files
 - [x] Decide the architecture: native Rust core + browser viewer; phones in the order LAN viewer, WASM build, native app
 - [x] Proof of concept in `poc/`: native Rust simulation, browser viewer, phone over the local network (std only; see `poc/README.md`)
-- [~] Choose the toolchain: Rust core (cargo, clippy, rustfmt, tests) and TypeScript viewer decided; CI and the viewer's build setup still open
+- [~] Choose the toolchain: Rust core (cargo, clippy, rustfmt, tests) and TypeScript viewer decided; CI exists for Rust and the example JSON; the viewer's build setup is still open
 
 **Exit criteria:** open questions answered, toolchain chosen, schemas validate the example files in CI.
 
@@ -24,7 +24,7 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 
 Goal: a deterministic, headless simulation of one district that produces a congestion heatmap.
 
-- [ ] Project skeleton: Rust workspace (`crates/core`, `crates/cli`, `crates/server`), tests, CI
+- [x] Project skeleton: Rust workspace (`crates/core`, `crates/cli`, `crates/server`), tests, CI (GitHub Actions: fmt, clippy, tests, PoC check, JSON validity)
 - [ ] Seeded RNG with one stream per agent
 - [ ] Fixed-step simulation loop and 24-hour clock
 - [ ] Config loading and validation (scenario + map)

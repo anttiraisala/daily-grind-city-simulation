@@ -226,6 +226,7 @@ More about the demo, its API and its limits: [`poc/README.md`](poc/README.md). T
 | `schema/types.ts` | Core data structures (draft) |
 | `schema/scenario.example.json` | Example scenario: population, traits, schedules, events |
 | `schema/map.example.json` | Example map: roads, traffic lights, buildings |
+| `crates/` | Rust workspace for the real simulation: `core` (headless), `cli` (runner), `server` (viewer link); skeleton only |
 | `poc/` | Proof of concept: native Rust simulation, browser viewer, phone over the local network |
 | `LICENSE` | MIT license |
 
