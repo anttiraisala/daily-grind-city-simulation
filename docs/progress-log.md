@@ -9,9 +9,11 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Adopted the English-only repository rule; translated `types.ts` and the example files; renamed the example map to `example_block`.
 - Set up the GitHub repository `anttiraisala/daily-grind-city-simulation`: default branch `master`, first commit with docs, schema, `README.md` and `CLAUDE.md`.
 - Added `roadmap.md`, `progress-log.md` and `notes.md`.
+- Added the MIT `LICENSE` and a getting-started section in `README.md` (Git install per OS, clone, download without Git, data file checks).
 
 **Decided**
 - Default branch is `master`, on purpose.
+- License is MIT for the project's own code and docs. Data imported from OpenStreetMap stays under ODbL and must be kept separate and attributed.
 - Reproducibility only on the same machine with the same program version; no bit-exact results across machines.
 - Hybrid agent model: binding schedules plus needs and mood that fill the gaps and cause deviations.
 - Two movement modes (lane, free) plus inside-building agents that take no space.

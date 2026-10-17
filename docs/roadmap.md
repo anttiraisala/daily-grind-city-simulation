@@ -10,6 +10,8 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 - [x] Draft the data model (`schema/types.ts`)
 - [x] Draft an example scenario and an example map (`schema/*.example.json`)
 - [x] Create the repository and conventions (`README.md`, `CLAUDE.md`)
+- [x] Choose a license (MIT) and add `LICENSE`
+- [x] Getting-started instructions in `README.md` (clone and data checks; build and run pending the toolchain)
 - [ ] Resolve the open questions at the end of `design-plan.md` (which gaps go into Phase 1; population model for year-long runs; sequential vs parallel weeks)
 - [ ] Add a JSON Schema (or generated validators) for the scenario and map files
 - [ ] Choose the toolchain: TypeScript project layout, test runner, formatter, CI
