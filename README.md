@@ -18,6 +18,9 @@ A top-down 2D/2.5D city simulation in which residents with individual personalit
 | Path | Contents |
 |---|---|
 | `docs/design-plan.md` | Decisions so far, known gaps, roadmap and the numbered ideas backlog |
+| `docs/roadmap.md` | Phased roadmap with task-level status |
+| `docs/progress-log.md` | Dated log of what was done, decided and found |
+| `docs/notes.md` | Informal thoughts, principles, hunches and open questions |
 | `schema/types.ts` | Core data structures (draft) |
 | `schema/scenario.example.json` | Example scenario: population, traits, schedules, events |
 | `schema/map.example.json` | Example map: roads, traffic lights, buildings |

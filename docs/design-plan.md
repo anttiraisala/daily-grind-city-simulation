@@ -80,11 +80,7 @@ These are not optional extras. Each one affects the core model or the schema.
 
 ## 4. Roadmap
 
-- **Phase 1, core:** agents, schedules and needs, road graph, lane mode, IDM with driver errors (G1), intersections and traffic lights (G2), crossings (G3), parking (G5), initial state and burn-in (G6), calendar (G7), accumulation layers, JSON schema, headless runner, minimal 2D viewer.
-- **Phase 2:** map editor and OSM import.
-- **Phase 3:** incidents and emergency services: crashes, free mode, ambulance and police, hospital.
-- **Phase 4:** fires and fire stations.
-- **Phase 5 and later:** items from the backlog.
+The phased roadmap with task-level status lives in [`roadmap.md`](roadmap.md); dated history is in [`progress-log.md`](progress-log.md); informal thoughts are in [`notes.md`](notes.md). In short: headless core first, then viewer and inspector, then map editor and OSM import, then incidents and emergency services, then fires, then the backlog.
 
 **MVP:** one district, a few hundred agents, homes, workplaces and shops, walking and cars, a few traffic lights, a 24-hour clock, a congestion heatmap and an agent inspector.
 
