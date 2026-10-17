@@ -11,6 +11,7 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Added `roadmap.md`, `progress-log.md` and `notes.md`.
 - Added the MIT `LICENSE` and a getting-started section in `README.md` (Git install per OS, clone, download without Git, data file checks).
 - Built the proof of concept in `poc/` (std-only Rust): deterministic event-driven commuting simulation, HTTP server, single-file browser viewer with pan/zoom/pinch, resident inspector, speed control, a logged `Delay` command and a slow-traffic heat map. 10 unit tests pass; the determinism check passes; the viewer was driven with a headless browser (desktop and phone layouts, tap, follow, pinch, commands, wrong token).
+- Expanded the README getting-started section into detailed per-OS steps: install, test, determinism check, run (local and `--lan`), options, update, troubleshooting, firewall.
 - Measured the PoC: 100k residents = 1.7 s per simulated day, 300k = 12.9 s, 1M = 190 s (single thread, 2-vCPU VM, much simpler model than the real one).
 
 **Decided**

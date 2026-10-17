@@ -66,32 +66,154 @@ python -m json.tool schema\map.example.json > $null; if ($?) { "map OK" }
 
 ### 4. Install Rust (for the proof of concept)
 
-| System | Commands |
-|---|---|
-| Debian / Ubuntu | `sudo apt install -y build-essential curl` then the rustup line below |
-| Fedora | `sudo dnf install -y gcc curl` then the rustup line below |
-| Arch | `sudo pacman -S base-devel rustup && rustup default stable` |
-| macOS | `xcode-select --install` then the rustup line below |
-| Windows (PowerShell) | `winget install Rustlang.Rustup` (rustup tells you if the Microsoft C++ Build Tools are missing and where to get them) |
+You need a C toolchain (the Rust linker uses it) and Rust itself. Pick your system.
 
-The rustup line for Linux and macOS (then open a new terminal):
+**Debian / Ubuntu**
 
 ```sh
+sudo apt update
+sudo apt install -y build-essential curl
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
 
-Check with `cargo --version`.
+**Fedora**
 
-### 5. Build and run the proof of concept
+```sh
+sudo dnf install -y gcc curl
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+**Arch**
+
+```sh
+sudo pacman -S --needed base-devel rustup
+rustup default stable
+```
+
+**macOS**
+
+```sh
+xcode-select --install
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+**Windows (PowerShell, not tested by the maintainer yet)**
+
+```powershell
+winget install --id Microsoft.VisualStudio.2022.BuildTools -e --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+winget install --id Rustlang.Rustup -e
+```
+
+The first command installs the Microsoft C++ build tools (several GB, takes a while). Prefer native Windows over WSL: a phone cannot reach a server inside WSL without extra port forwarding.
+
+The rustup installer asks a question: press `1` and Enter for the default installation. Afterwards **open a new terminal window** (or run `source "$HOME/.cargo/env"` on Linux and macOS), then check:
+
+```sh
+rustc --version
+cargo --version
+```
+
+Both must print a version number. If you see "command not found", the terminal has not picked up the new PATH: open a new one.
+
+### 5. Build, test and run the proof of concept
+
+All commands below run in the `poc` folder of the repository:
 
 ```sh
 cd poc
+```
+
+**5a. Run the tests** (builds the program on the first run, takes under a minute):
+
+```sh
+cargo test --release
+```
+
+Expected: `test result: ok. 10 passed`.
+
+**5b. Check determinism** (same seed must give the same run):
+
+```sh
+cargo run --release -- check --agents 20000
+```
+
+Expected last line: `PASS: same seed gives the same run, a different seed gives a different run`.
+
+**5c. Start the live simulation, viewer on this computer only:**
+
+```sh
+cargo run --release -- serve
+```
+
+The program prints something like:
+
+```
+Viewer (this computer): http://localhost:8080/?t=AbCdEf123456
+The token in the URL is required for all API calls. Press Ctrl+C to stop.
+```
+
+Copy the whole address, including `?t=...`, into a browser on the same computer. Without the token the viewer shows an error. The token changes on every start; to keep it fixed use `--token mysecret`.
+
+What you should see: a map of intersections and moving dots. The clock starts at 00:00 and runs 600 times faster than real time, so the morning rush hour (07:00) arrives after about 42 seconds. Use the speed buttons for faster or slower, **Pause** to freeze, drag to pan, scroll to zoom, click a dot to inspect a resident, **Follow** to track them, and **Slow-traffic heat** to colour streets by how slowly cars moved.
+
+Stop it with `Ctrl+C` in the terminal.
+
+**5d. Watch from a phone on the same Wi-Fi:**
+
+```sh
 cargo run --release -- serve --lan
 ```
 
-The program prints two addresses with an access token. Open the first one in a browser on this computer. Open the "same network" one on a phone connected to the same Wi-Fi. Leave out `--lan` to make the viewer reachable from this computer only; use `--lan` only on a network you trust. Windows may ask whether to allow network access: allow it for private networks.
+It prints a second address, `Viewer (same network, e.g. phone): http://192.168.x.x:8080/?t=...`. Type that address into the phone's browser. Use `--lan` only on a network you trust (home Wi-Fi, not a cafe): the connection is unencrypted and the token is the only protection.
 
-More commands (`bench`, `check`, tests) and what the demo does and does not show are in [`poc/README.md`](poc/README.md). The real simulation is not built yet; see `docs/roadmap.md`.
+If the printed address looks wrong, find your computer's address yourself:
+
+| System | Command |
+|---|---|
+| Linux | `hostname -I` |
+| macOS | `ipconfig getifaddr en0` |
+| Windows | `ipconfig` (look for "IPv4 Address") |
+
+**5e. Useful options** (combine freely):
+
+```sh
+cargo run --release -- serve --lan --agents 300000     # bigger city (slower, more traffic)
+cargo run --release -- serve --agents 20000 --speed 60 # small city, slower clock
+cargo run --release -- serve --port 9000               # another port
+cargo run --release -- serve --seed 7                  # different random city and people
+cargo run --release -- bench --agents 100000           # headless speed test, no browser
+cargo run --release -- help                            # all options
+```
+
+After the first build you can also run the compiled program directly: `./target/release/city-poc serve --lan` (on Windows `.\target\release\city-poc.exe serve --lan`).
+
+**5f. Update later:**
+
+```sh
+git pull
+```
+
+### 6. Troubleshooting
+
+| Symptom | Cause and fix |
+|---|---|
+| `cargo: command not found` | Open a new terminal, or run `source "$HOME/.cargo/env"`. |
+| `linker 'cc' not found` (Linux/macOS) | Install the C toolchain from step 4 (`build-essential`, `gcc`, `xcode-select --install`). |
+| `link.exe not found` (Windows) | Install the Visual Studio Build Tools from step 4 and reopen PowerShell. |
+| `Address already in use` | Something else uses port 8080. Add `--port 8090`. |
+| Browser shows "missing or wrong token" | Open the full address from the terminal, including `?t=...`. The token changes on every start. |
+| Phone cannot connect | The phone and computer must be on the same Wi-Fi, and the server must run with `--lan`. Guest networks and some routers isolate devices from each other. Turn off VPNs. Check the computer's firewall (below). |
+| Page is blank or dots are missing | Zoom out or reload. At 00:00 nobody has left home yet: raise the speed or wait until about 06:30. |
+| Simulation feels slow | Use fewer residents: `--agents 20000`. The clock shows the real speed. |
+
+Firewall, only if the phone still cannot connect:
+
+- Ubuntu with ufw: `sudo ufw allow 8080/tcp` (remove later with `sudo ufw delete allow 8080/tcp`).
+- Fedora: `sudo firewall-cmd --add-port=8080/tcp` (temporary until reboot).
+- macOS: click Allow in the dialog that appears on first start.
+- Windows: click Allow (private networks) in the Defender dialog.
+
+More about the demo, its API and its limits: [`poc/README.md`](poc/README.md). The real simulation is not built yet; see `docs/roadmap.md`.
 
 ## Repository layout
 
