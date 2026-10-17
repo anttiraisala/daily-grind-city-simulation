@@ -1,6 +1,6 @@
 # Traffic Congestion Simulation: Design Plan
 
-Status: draft v0.2 (2026-10-17). Companion files: `types.ts`, `scenario.example.json`, `map.example.json`.
+Status: draft v0.3 (2026-10-17). Companion files: `types.ts`, `scenario.example.json`, `map.example.json`.
 
 ## 1. Purpose
 
@@ -21,8 +21,8 @@ Non-goals for now: calibration against real data, bit-exact reproducibility acro
 
 ### Scale
 
-- Realistic target: 10k-100k agents at full fidelity on a desktop; 100k-300k with an optimized core (Rust/WASM, GPU). 1M is aspirational and needs coarser time steps or several machines.
-- Phones: 10-100 agents, or act as a viewer for a run computed elsewhere.
+- Realistic target: 10k-100k agents at full fidelity on a desktop; 100k-300k with an optimized native core (multi-threaded, GPU later). 1M is aspirational and needs coarser time steps or several machines. The proof of concept (`../poc/`, a much simpler model with 1 s ticks) simulated 1M residents for one day in about 3 minutes on one core, so the architecture is not the bottleneck; the full model will be far heavier.
+- Phones, in this order (decided 2026-10-17): (1) a viewer for a run computed on a desktop, over the local network; (2) a WASM build of the same core for small offline runs of 10-100 agents; (3) a native mobile app, only if it turns out to be needed.
 - One "city size" control scales the map and the population together, so density, and therefore congestion behavior, is preserved. Separate controls remain available for deliberate density experiments.
 
 ### Agents
@@ -54,7 +54,8 @@ Non-goals for now: calibration against real data, bit-exact reproducibility acro
 - JSON is the single source of truth. The map and the scenario are separate files. Traits are distributions with optional correlations. Configs are validated before a run.
 - A map editor that can, in principle, handle cities of any size; OSM import with manual edits stored as a diff; large maps stored in chunks.
 - Outputs: event log, periodic snapshots, accumulation layers (dwell time, speed and slow time per cell per hour).
-- Platform: browser + TypeScript for the prototype. The core may move to Rust/WASM without changing the data model.
+- Architecture (decided 2026-10-17): the core is a deterministic Rust library with no I/O, run natively: a headless command line for batches, plus a server. A browser viewer renders snapshots and sends commands. Commands are tick-stamped messages, so the command log doubles as the network protocol. Phones follow the order under Scale. The proof of concept in `../poc/` demonstrates this slice (see `../poc/README.md`).
+- Tooling consequence: Rust (cargo, clippy, rustfmt, `cargo test`, property tests later) for the core; schemas defined in Rust (serde + schemars) with TypeScript types generated for the viewer; TypeScript, Vite and PixiJS only for the viewer and the map editor. This replaces the earlier TypeScript-only toolchain idea.
 
 ## 3. Gaps found in review
 
@@ -77,6 +78,8 @@ These are not optional extras. Each one affects the core model or the schema.
 **G8. Long runs and population.** Over a simulated year, deaths and injuries deplete the population. Choose between a constant population (agents are replaced) and a demographic model (see I-07). Injured agents need hospital stays and time off work.
 
 **G9. Independence of parallel weeks.** Running 52 weeks in parallel instead of one sequential year is only valid if nothing carries over from week to week. Learning, demographics, seasons and road wear all carry over. Backlog items that break this assumption are marked "Breaks G9".
+
+**G10. Queue spillback.** A full street must block the streets behind it, and cars cannot exceed jam density. The proof of concept does not do this: its 1M run puts up to 153 cars on a segment that holds 13, which makes congestion look milder and more local than it should. Solved by car following on finite-length lanes (IDM) together with junctions (G2), not by tuning the speed-density formula.
 
 ## 4. Roadmap
 

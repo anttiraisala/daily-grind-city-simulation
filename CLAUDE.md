@@ -17,6 +17,7 @@
 - The default branch is `master` (a deliberate choice by the maintainer; do not rename it to `main`).
 - `docs/design-plan.md` is the source of truth for decisions, gaps and the ideas backlog. Update it when a decision changes.
 - `docs/roadmap.md` is the live tracker: tick off tasks as they are done. `docs/progress-log.md` gets a dated entry (done / decided / found / next) at the end of each working session. `docs/notes.md` is the informal scratchpad.
+- `poc/` is a throwaway proof of concept (std-only Rust plus a browser viewer). It is reference material for the real implementation, not its foundation: keep it building and its README current, but do not grow it into the real simulation.
 - `schema/` holds the data model. The map and the scenario are separate JSON files. JSON is the single source of truth for configuration.
 
 ## Simulation invariants

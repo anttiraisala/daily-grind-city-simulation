@@ -20,6 +20,8 @@ Watching small people live their lives on a map is the point. Congestion researc
 - Learned, adaptive agents make parallel weeks invalid (see G9 in `design-plan.md`). Decide early whether learning is on in research runs.
 - A small share of careless or aggressive drivers may dominate the crash statistics. Needs many seeds.
 - Parking search may turn out to be a surprisingly large part of downtown congestion.
+- In the PoC, congestion needed a big, dense city because streets had no junctions. Real streets lose most of their capacity at intersections and traffic lights, so expect congestion to appear much earlier once G2 exists. Compare the PoC's heat map with the real one then.
+- Simple x-then-y routing makes traffic form straight stripes. Check that real route choice (and congestion-aware rerouting, I-03) breaks the stripes up.
 
 ## Open questions
 

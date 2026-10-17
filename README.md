@@ -2,7 +2,7 @@
 
 A top-down 2D/2.5D city simulation in which residents with individual personalities live through a 24-hour cycle: commuting, working, eating, shopping, skipping work, and sometimes crashing cars. It is a semi-serious, game-like research tool for studying where and when congestion forms and why.
 
-**Status:** design phase. No simulation code yet.
+**Status:** design phase, with a small proof of concept in `poc/`: a native Rust simulation, a browser viewer, and a phone watching it over the local network.
 
 ## Key ideas
 
@@ -15,7 +15,7 @@ A top-down 2D/2.5D city simulation in which residents with individual personalit
 
 ## Getting started
 
-The project is in the design phase, so there is nothing to build or run yet. You can already get the repository onto any system and check the data files.
+The project is in the design phase. You can get the repository onto any system, check the data files, and run a small proof of concept.
 
 ### 1. Install Git
 
@@ -64,9 +64,34 @@ python -m json.tool schema\scenario.example.json > $null; if ($?) { "scenario OK
 python -m json.tool schema\map.example.json > $null; if ($?) { "map OK" }
 ```
 
-### 4. Build and run
+### 4. Install Rust (for the proof of concept)
 
-Not available yet. Install, build, test and run commands will be added here when the toolchain is chosen in Phase 1 (see `docs/roadmap.md`).
+| System | Commands |
+|---|---|
+| Debian / Ubuntu | `sudo apt install -y build-essential curl` then the rustup line below |
+| Fedora | `sudo dnf install -y gcc curl` then the rustup line below |
+| Arch | `sudo pacman -S base-devel rustup && rustup default stable` |
+| macOS | `xcode-select --install` then the rustup line below |
+| Windows (PowerShell) | `winget install Rustlang.Rustup` (rustup tells you if the Microsoft C++ Build Tools are missing and where to get them) |
+
+The rustup line for Linux and macOS (then open a new terminal):
+
+```sh
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+Check with `cargo --version`.
+
+### 5. Build and run the proof of concept
+
+```sh
+cd poc
+cargo run --release -- serve --lan
+```
+
+The program prints two addresses with an access token. Open the first one in a browser on this computer. Open the "same network" one on a phone connected to the same Wi-Fi. Leave out `--lan` to make the viewer reachable from this computer only; use `--lan` only on a network you trust. Windows may ask whether to allow network access: allow it for private networks.
+
+More commands (`bench`, `check`, tests) and what the demo does and does not show are in [`poc/README.md`](poc/README.md). The real simulation is not built yet; see `docs/roadmap.md`.
 
 ## Repository layout
 
@@ -79,6 +104,7 @@ Not available yet. Install, build, test and run commands will be added here when
 | `schema/types.ts` | Core data structures (draft) |
 | `schema/scenario.example.json` | Example scenario: population, traits, schedules, events |
 | `schema/map.example.json` | Example map: roads, traffic lights, buildings |
+| `poc/` | Proof of concept: native Rust simulation, browser viewer, phone over the local network |
 | `LICENSE` | MIT license |
 
 ## Branching

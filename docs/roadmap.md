@@ -11,10 +11,12 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 - [x] Draft an example scenario and an example map (`schema/*.example.json`)
 - [x] Create the repository and conventions (`README.md`, `CLAUDE.md`)
 - [x] Choose a license (MIT) and add `LICENSE`
-- [x] Getting-started instructions in `README.md` (clone and data checks; build and run pending the toolchain)
+- [x] Getting-started instructions in `README.md` (clone, data checks, building and running the proof of concept)
 - [ ] Resolve the open questions at the end of `design-plan.md` (which gaps go into Phase 1; population model for year-long runs; sequential vs parallel weeks)
 - [ ] Add a JSON Schema (or generated validators) for the scenario and map files
-- [ ] Choose the toolchain: TypeScript project layout, test runner, formatter, CI
+- [x] Decide the architecture: native Rust core + browser viewer; phones in the order LAN viewer, WASM build, native app
+- [x] Proof of concept in `poc/`: native Rust simulation, browser viewer, phone over the local network (std only; see `poc/README.md`)
+- [~] Choose the toolchain: Rust core (cargo, clippy, rustfmt, tests) and TypeScript viewer decided; CI and the viewer's build setup still open
 
 **Exit criteria:** open questions answered, toolchain chosen, schemas validate the example files in CI.
 
@@ -22,7 +24,7 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 
 Goal: a deterministic, headless simulation of one district that produces a congestion heatmap.
 
-- [ ] Project skeleton: `packages/core`, test runner, CI
+- [ ] Project skeleton: Rust workspace (`crates/core`, `crates/cli`, `crates/server`), tests, CI
 - [ ] Seeded RNG with one stream per agent
 - [ ] Fixed-step simulation loop and 24-hour clock
 - [ ] Config loading and validation (scenario + map)
@@ -50,7 +52,7 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 ## Phase 1b: Measurement prototype
 
 - [ ] Synthetic benchmark: agent updates per second on the maintainer's machine
-- [ ] Decide whether the core stays in TypeScript or moves to Rust/WASM
+- [x] Core language: Rust, native (decided). Re-measure with the real model: the PoC numbers are for a much simpler one
 - [ ] Record measured numbers in `design-plan.md` (replace the estimates)
 
 ## Phase 2: Viewer and inspector
@@ -62,6 +64,9 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 - [ ] Edit needs and mood, force a goal (logged as commands)
 - [ ] Heatmap overlay from accumulation layers
 - [ ] Settings panel for population, vehicles, trait distributions (writes the scenario JSON)
+- [ ] Replace HTTP polling with a WebSocket (axum); TypeScript and PixiJS viewer with generated types
+- [ ] Phone step 2: WASM build of the core for small offline runs (10-100 agents)
+- [ ] Phone step 3: native mobile app, only if needed
 
 ## Phase 3: Map editor and OSM import
 

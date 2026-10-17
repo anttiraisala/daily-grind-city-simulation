@@ -10,6 +10,8 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Set up the GitHub repository `anttiraisala/daily-grind-city-simulation`: default branch `master`, first commit with docs, schema, `README.md` and `CLAUDE.md`.
 - Added `roadmap.md`, `progress-log.md` and `notes.md`.
 - Added the MIT `LICENSE` and a getting-started section in `README.md` (Git install per OS, clone, download without Git, data file checks).
+- Built the proof of concept in `poc/` (std-only Rust): deterministic event-driven commuting simulation, HTTP server, single-file browser viewer with pan/zoom/pinch, resident inspector, speed control, a logged `Delay` command and a slow-traffic heat map. 10 unit tests pass; the determinism check passes; the viewer was driven with a headless browser (desktop and phone layouts, tap, follow, pinch, commands, wrong token).
+- Measured the PoC: 100k residents = 1.7 s per simulated day, 300k = 12.9 s, 1M = 190 s (single thread, 2-vCPU VM, much simpler model than the real one).
 
 **Decided**
 - Default branch is `master`, on purpose.
@@ -17,15 +19,19 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Reproducibility only on the same machine with the same program version; no bit-exact results across machines.
 - Hybrid agent model: binding schedules plus needs and mood that fill the gaps and cause deviations.
 - Two movement modes (lane, free) plus inside-building agents that take no space.
+- Architecture: native Rust core plus a browser viewer. Phones in the order (1) LAN viewer, (2) WASM build for small offline runs, (3) native app only if needed. TypeScript is limited to the viewer and the map editor.
 
 **Found**
 - G1: IDM is collision-free by design, so crashes need a driver error model on top of it.
 - G2/G3/G5/G6/G7 must be in Phase 1; G4/G8 can wait. (Proposal, not yet confirmed.)
+- G10 (new): no queue spillback in the PoC; more than jam-density cars pile onto one segment.
+- In the simple PoC model, rush-hour congestion appears only in large, dense cities (about 100k residents, 40 per intersection, tight downtown) because there are no junctions or traffic lights yet.
+- The sandbox used for this work cannot reach crates.io, so the PoC uses only the Rust standard library (hand-written HTTP server, polling instead of WebSocket).
 
 **Next**
-- Answer the open questions in `design-plan.md`.
-- Choose the toolchain and set up the project skeleton and CI.
-- Start the Phase 1 core loop.
+- Answer the remaining open questions in `design-plan.md` (which gaps go into Phase 1, population model for year-long runs, sequential vs parallel weeks).
+- Set up the Rust workspace (`crates/core`, `crates/cli`, `crates/server`) and CI; keep `poc/` as a reference until replaced.
+- Start the Phase 1 core loop with the real road graph from `schema/`.
 
 ## 2026-10-16
 
