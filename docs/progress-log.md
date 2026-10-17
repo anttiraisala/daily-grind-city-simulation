@@ -22,6 +22,8 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Two movement modes (lane, free) plus inside-building agents that take no space.
 - Architecture: native Rust core plus a browser viewer. Phones in the order (1) LAN viewer, (2) WASM build for small offline runs, (3) native app only if needed. TypeScript is limited to the viewer and the map editor.
 
+- Phase 1 gaps: G2, G3, G6 only; G1 moves to Phase 4, G5 and G7 before the first year-long run. Population constant; long runs sequential.
+
 **Found**
 - G1: IDM is collision-free by design, so crashes need a driver error model on top of it.
 - G2/G3/G5/G6/G7 must be in Phase 1; G4/G8 can wait. (Proposal, not yet confirmed.)

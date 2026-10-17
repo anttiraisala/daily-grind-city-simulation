@@ -12,7 +12,7 @@ Legend: `[x]` done, `[~]` in progress, `[ ]` not started. Gap IDs (G1-G9) and id
 - [x] Create the repository and conventions (`README.md`, `CLAUDE.md`)
 - [x] Choose a license (MIT) and add `LICENSE`
 - [x] Getting-started instructions in `README.md` (clone, data checks, building and running the proof of concept)
-- [ ] Resolve the open questions at the end of `design-plan.md` (which gaps go into Phase 1; population model for year-long runs; sequential vs parallel weeks)
+- [x] Resolve the open questions in `design-plan.md` section 6 (Phase 1 = G2, G3, G6; constant population; sequential weeks)
 - [ ] Add a JSON Schema (or generated validators) for the scenario and map files
 - [x] Decide the architecture: native Rust core + browser viewer; phones in the order LAN viewer, WASM build, native app
 - [x] Proof of concept in `poc/`: native Rust simulation, browser viewer, phone over the local network (std only; see `poc/README.md`)
@@ -35,12 +35,9 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 - [ ] Event-driven decisions; needs updated once per simulated minute
 - [ ] Pathfinding and learned commute estimates
 - [ ] Lane-following vehicles: IDM car-following
-- [ ] Driver error model on top of IDM (G1)
 - [ ] Intersections: right of way, conflict zones, traffic lights (G2)
 - [ ] Pedestrian movement with social force; pedestrian crossings (G3)
-- [ ] Parking (G5)
 - [ ] Initial state and burn-in snapshot (G6)
-- [ ] Calendar: weekdays, weekends, holidays (G7)
 - [ ] Command log (needs, goals, road edits, pause)
 - [ ] Event log and periodic snapshots
 - [ ] Accumulation layers: dwell time, speed, slow time per cell per hour
@@ -77,6 +74,8 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 
 ## Phase 4: Incidents and emergency services
 
+- [ ] Driver error model on top of IDM (G1)
+
 - [ ] Free movement mode and collisions with buildings
 - [ ] Crashes, pedestrians hit, medical episodes
 - [ ] Ambulance, police and hospital with patient flow
@@ -86,6 +85,11 @@ Goal: a deterministic, headless simulation of one district that produces a conge
 
 - [ ] House fires, spread, survival decay
 - [ ] Fire stations and fire trucks
+
+## Before the first year-long run
+
+- [ ] Parking (G5)
+- [ ] Calendar: weekdays, weekends, holidays (G7)
 
 ## Phase 6 and later: Backlog
 

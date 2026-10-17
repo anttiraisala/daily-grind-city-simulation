@@ -199,8 +199,12 @@ The best value for the effort:
 - **I-83 Chaos dial.** One global slider scales all incident rates. Effort S, wildness 2.
 - **I-84 God tools.** Start a fire, spawn a crowd, strike lightning, close a road, toggle rain. Each one is a command, so it is logged. Effort S, wildness 2.
 
-## 6. Open questions
+## 6. Decisions on the former open questions (2026-10-17)
 
-1. Which gaps go into Phase 1? Proposal: G1-G3 and G5-G7 in Phase 1; G4 and G8 later.
-2. Year-long runs: constant population or demographics (G8)?
-3. Year-long runs: sequential, or parallel weeks from a shared burn-in snapshot (G9)?
+1. **Phase 1 gaps: G2, G3 and G6 only.** Intersections, pedestrian crossings and initial state/burn-in come first, because the first research question is where congestion forms. G1 (driver error model), G5 (parking) and G7 (calendar) move out of Phase 1; G1 goes with incidents (Phase 4), G5 and G7 are scheduled before the first year-long run. G4 and G8 stay later. Consequences to accept: until G5 exists, cars still vanish at their destination and parking search cannot cause congestion; until G7 exists, every simulated day is a weekday, so a year-long run is only meaningful after G7.
+2. **Population: constant** over a run. Demographics (G8, I-07) come later.
+3. **Long runs: sequential weeks.** Learned commute estimates carry over, so parallel weeks are not valid. Parallel runs are for different seeds or scenarios from a shared burn-in snapshot (G6), not for different weeks of one run.
+
+## 7. Open questions
+
+(None at the moment.)
