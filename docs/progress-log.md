@@ -23,6 +23,7 @@ Dated, newest first. One entry per working session or milestone: what was done, 
 - Architecture: native Rust core plus a browser viewer. Phones in the order (1) LAN viewer, (2) WASM build for small offline runs, (3) native app only if needed. TypeScript is limited to the viewer and the map editor.
 
 - Maintainer confirmed: Ubuntu 24.04 desktop, repository stays public, copyright holder "Antti Raisala".
+- Added stop/cleanup commands for running simulations to the README (Linux, macOS, Windows).
 - Added the Rust workspace skeleton (`crates/core`, `crates/cli`, `crates/server`; `poc/` excluded) and GitHub Actions CI.
 - Phase 1 gaps: G2, G3, G6 only; G1 moves to Phase 4, G5 and G7 before the first year-long run. Population constant; long runs sequential.
 

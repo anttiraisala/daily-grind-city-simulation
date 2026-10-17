@@ -156,7 +156,37 @@ Copy the whole address, including `?t=...`, into a browser on the same computer.
 
 What you should see: a map of intersections and moving dots. The clock starts at 00:00 and runs 600 times faster than real time, so the morning rush hour (07:00) arrives after about 42 seconds. Use the speed buttons for faster or slower, **Pause** to freeze, drag to pan, scroll to zoom, click a dot to inspect a resident, **Follow** to track them, and **Slow-traffic heat** to colour streets by how slowly cars moved.
 
-Stop it with `Ctrl+C` in the terminal.
+Stop it with `Ctrl+C` in the terminal where it runs. If you close that terminal window, the program normally ends with it.
+
+**5c-2. Stop every running simulation**
+
+Use this if a simulation was started in the background, in a terminal you lost, or you are not sure whether one is still running.
+
+Linux and macOS:
+
+```sh
+pgrep -a city-poc          # list running simulations (no output = none running)
+pkill -x city-poc          # stop all of them
+pgrep -a city-poc          # check again: should print nothing
+```
+
+If one refuses to stop: `pkill -9 -x city-poc`.
+
+To see what is using the port (default 8080):
+
+```sh
+ss -ltnp | grep 8080       # Linux
+lsof -i :8080              # macOS
+```
+
+Windows (PowerShell):
+
+```powershell
+Get-Process city-poc -ErrorAction SilentlyContinue   # list
+Stop-Process -Name city-poc -Force                   # stop all
+```
+
+Once stopped, the viewer in the browser or on the phone shows a connection error; that is expected.
 
 **5d. Watch from a phone on the same Wi-Fi:**
 
@@ -200,7 +230,7 @@ git pull
 | `cargo: command not found` | Open a new terminal, or run `source "$HOME/.cargo/env"`. |
 | `linker 'cc' not found` (Linux/macOS) | Install the C toolchain from step 4 (`build-essential`, `gcc`, `xcode-select --install`). |
 | `link.exe not found` (Windows) | Install the Visual Studio Build Tools from step 4 and reopen PowerShell. |
-| `Address already in use` | Something else uses port 8080. Add `--port 8090`. |
+| `Address already in use` | An earlier simulation may still be running: stop it with `pkill -x city-poc` (see 5c-2), or use another port with `--port 8090`. |
 | Browser shows "missing or wrong token" | Open the full address from the terminal, including `?t=...`. The token changes on every start. |
 | Phone cannot connect | The phone and computer must be on the same Wi-Fi, and the server must run with `--lan`. Guest networks and some routers isolate devices from each other. Turn off VPNs. Check the computer's firewall (below). |
 | Page is blank or dots are missing | Zoom out or reload. At 00:00 nobody has left home yet: raise the speed or wait until about 06:30. |
